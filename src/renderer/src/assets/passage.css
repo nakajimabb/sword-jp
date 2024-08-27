@@ -1,0 +1,64 @@
+@font-face {
+  font-family: 'Tinos';
+  font-style: normal;
+  font-weight: normal;
+  src: url('./fonts/Tinos-Regular.ttf');
+}
+
+.container {
+  text-align: left;
+  margin: 20px;
+}
+
+.phrase {
+  display: inline;
+}
+
+.w {
+  margin: 0 3px;
+}
+
+.he,
+.hbo {
+  direction: rtl;
+  text-align: right;
+  line-height: 1.25em;
+  font-family: 'Tinos', serif;
+}
+
+.grc {
+  line-height: 1.25em;
+  font-family: 'Tinos', serif;
+}
+
+.en {
+  font-family: sans-serif;
+}
+
+.verse {
+  font-family: arial, sans-serif;
+  font-weight: bold;
+  display: inline-block;
+  color: blue;
+  margin: 0 5px;
+}
+
+.rtl {
+  direction: rtl;
+}
+
+.passage {
+  display: inline;
+}
+
+.passage:hover {
+  background-color: bisque;
+}
+
+.highlight {
+  background-color: bisque;
+}
+
+.highlight2 {
+  background-color: orange;
+}

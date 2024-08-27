@@ -1,0 +1,266 @@
+{
+  "Gen": {
+    "abbrev": "創",
+    "name": "創世記"
+  },
+  "Exod": {
+    "abbrev": "出",
+    "name": "出エジプト記"
+  },
+  "Lev": {
+    "abbrev": "レビ",
+    "name": "レビ記"
+  },
+  "Num": {
+    "abbrev": "民",
+    "name": "民数記"
+  },
+  "Deut": {
+    "abbrev": "申",
+    "name": "申命記"
+  },
+  "Josh": {
+    "abbrev": "ヨシュ",
+    "name": "ヨシュア記"
+  },
+  "Judg": {
+    "abbrev": "士",
+    "name": "士師記"
+  },
+  "Ruth": {
+    "abbrev": "ルツ",
+    "name": "ルツ記"
+  },
+  "1Sam": {
+    "abbrev": "サム上",
+    "name": "サムエル記上"
+  },
+  "2Sam": {
+    "abbrev": "サム下",
+    "name": "サムエル記下"
+  },
+  "1Kgs": {
+    "abbrev": "王上",
+    "name": "列王記上"
+  },
+  "2Kgs": {
+    "abbrev": "王下",
+    "name": "列王記下"
+  },
+  "1Chr": {
+    "abbrev": "代上",
+    "name": "歴代誌上"
+  },
+  "2Chr": {
+    "abbrev": "代下",
+    "name": "歴代誌下"
+  },
+  "Ezra": {
+    "abbrev": "エズ",
+    "name": "エズラ記"
+  },
+  "Neh": {
+    "abbrev": "ネヘ",
+    "name": "ネヘミヤ記"
+  },
+  "Esth": {
+    "abbrev": "エス",
+    "name": "エステル記"
+  },
+  "Job": {
+    "abbrev": "ヨブ",
+    "name": "ヨブ記"
+  },
+  "Ps": {
+    "abbrev": "詩",
+    "name": "詩篇"
+  },
+  "Prov": {
+    "abbrev": "箴",
+    "name": "箴言"
+  },
+  "Eccl": {
+    "abbrev": "コヘ",
+    "name": "コヘレトの言葉"
+  },
+  "Song": {
+    "abbrev": "雅",
+    "name": "雅歌"
+  },
+  "Isa": {
+    "abbrev": "イザ",
+    "name": "イザヤ書"
+  },
+  "Jer": {
+    "abbrev": "エレ",
+    "name": "エレミヤ書"
+  },
+  "Lam": {
+    "abbrev": "哀",
+    "name": "哀歌"
+  },
+  "Ezek": {
+    "abbrev": "エゼ",
+    "name": "エゼキエル書"
+  },
+  "Dan": {
+    "abbrev": "ダニ",
+    "name": "ダニエル書"
+  },
+  "Hos": {
+    "abbrev": "ホセ",
+    "name": "ホセア書"
+  },
+  "Joel": {
+    "abbrev": "ヨエ",
+    "name": "ヨエル書"
+  },
+  "Amos": {
+    "abbrev": "アモ",
+    "name": "アモス書"
+  },
+  "Obad": {
+    "abbrev": "オバ",
+    "name": "オバデヤ書"
+  },
+  "Jonah": {
+    "abbrev": "ヨナ",
+    "name": "ヨナ書"
+  },
+  "Mic": {
+    "abbrev": "ミカ",
+    "name": "ミカ書"
+  },
+  "Nah": {
+    "abbrev": "ナホ",
+    "name": "ナホム書"
+  },
+  "Hab": {
+    "abbrev": "ハバ",
+    "name": "ハバクク書"
+  },
+  "Zeph": {
+    "abbrev": "ゼファ",
+    "name": "ゼファニヤ書"
+  },
+  "Hag": {
+    "abbrev": "ハガ",
+    "name": "ハガイ書"
+  },
+  "Zech": {
+    "abbrev": "ゼカ",
+    "name": "ゼカリヤ書"
+  },
+  "Mal": {
+    "abbrev": "マラ",
+    "name": "マラキ書"
+  },
+  "Matt": {
+    "abbrev": "マタイ",
+    "name": "マタイによる福音書"
+  },
+  "Mark": {
+    "abbrev": "マルコ",
+    "name": "マルコによる福音書"
+  },
+  "Luke": {
+    "abbrev": "ルカ",
+    "name": "ルカによる福音書"
+  },
+  "John": {
+    "abbrev": "ヨハネ",
+    "name": "ヨハネによる福音書"
+  },
+  "Acts": {
+    "abbrev": "使徒",
+    "name": "使徒言行録"
+  },
+  "Rom": {
+    "abbrev": "ロマ",
+    "name": "ローマの信徒への手紙"
+  },
+  "1Cor": {
+    "abbrev": "一コリ",
+    "name": "コリントの信徒への手紙一"
+  },
+  "2Cor": {
+    "abbrev": "二コリ",
+    "name": "コリントの信徒への手紙二"
+  },
+  "Gal": {
+    "abbrev": "ガラ",
+    "name": "ガラテヤの信徒への手紙"
+  },
+  "Eph": {
+    "abbrev": "エフェ",
+    "name": "エフェソの信徒への手紙"
+  },
+  "Phil": {
+    "abbrev": "フィリ",
+    "name": "フィリピの信徒への手紙"
+  },
+  "Col": {
+    "abbrev": "コロ",
+    "name": "コロサイの信徒への手紙"
+  },
+  "1Thess": {
+    "abbrev": "一テサ",
+    "name": "テサロニケの信徒への手紙一"
+  },
+  "2Thess": {
+    "abbrev": "二テサ",
+    "name": "テサロニケの信徒への手紙二"
+  },
+  "1Tim": {
+    "abbrev": "一テモ",
+    "name": "テモテへの手紙一"
+  },
+  "2Tim": {
+    "abbrev": "二テモ",
+    "name": "テモテへの手紙二"
+  },
+  "Titus": {
+    "abbrev": "テト",
+    "name": "テトスへの手紙"
+  },
+  "Phlm": {
+    "abbrev": "フィレ",
+    "name": "フィレモンへの手紙"
+  },
+  "Heb": {
+    "abbrev": "ヘブ",
+    "name": "ヘブライ人への手紙"
+  },
+  "Jas": {
+    "abbrev": "ヤコ",
+    "name": "ヤコブの手紙"
+  },
+  "1Pet": {
+    "abbrev": "一ペト",
+    "name": "ペトロの手紙一"
+  },
+  "2Pet": {
+    "abbrev": "二ペト",
+    "name": "ペトロの手紙二"
+  },
+  "1John": {
+    "abbrev": "一ヨハ",
+    "name": "ヨハネの手紙一"
+  },
+  "2John": {
+    "abbrev": "二ヨハ",
+    "name": "ヨハネの手紙二"
+  },
+  "3John": {
+    "abbrev": "三ヨハ",
+    "name": "ヨハネの手紙三"
+  },
+  "Jude": {
+    "abbrev": "ユダ",
+    "name": "ユダの手紙"
+  },
+  "Rev": {
+    "abbrev": "黙",
+    "name": "ヨハネの黙示録"
+  }
+}
