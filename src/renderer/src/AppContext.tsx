@@ -9,18 +9,29 @@ export type Layout = {
   disabled: boolean;
 };
 
+export type TargetWord = {
+  lemma?: string;
+  morph?: string;
+  text?: string;
+  fixed?: boolean;
+};
+
 export type ContextType = {
   swords: Map<string, Sword>;
   layouts: Layout[][]; // jagged Array
   osisRef: string;
   setOsisRef: React.Dispatch<React.SetStateAction<string>>;
+  targetWord: TargetWord;
+  setTargetWord: React.Dispatch<React.SetStateAction<TargetWord>>;
 };
 
 const AppContext = createContext({
   swords: new Map(),
   layouts: [],
   osisRef: '',
-  setOsisRef: (_: string) => {}
+  setOsisRef: (_: string) => {},
+  targetWord: {},
+  setTargetWord: (_: TargetWord) => {}
 } as ContextType);
 
 const LayoutIndexes: number[][][] = [
@@ -63,10 +74,45 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
   const [swords, setSwords] = useState<Map<string, Sword>>(new Map());
   const [layouts, setLayouts] = useState<Layout[][]>([]);
   const [osisRef, setOsisRef] = useState('Gen.1');
+  const [targetWord, setTargetWord] = useState<TargetWord>({});
 
   useEffect(() => {
     // メインプロセスからのメッセージを受け取る
-    window.electron.ipcRenderer.on('message-from-main', (_, sword: Sword) => {
+    window.electron.ipcRenderer.on('load-app', (_, swords: Sword[]) => {
+      const clones = swords.map(
+        (sword) => new Sword(sword.modname, sword.modtype, sword.confs, sword.binary, sword.indexes)
+      );
+      const modules: Map<string, Sword> = new Map();
+      clones.forEach((clone) => modules.set(clone.modname, clone));
+      setSwords(modules);
+      const layoutArr: Layout[] = clones
+        .map((clone) => ({
+          modname: clone.modname,
+          textSize: 100,
+          doubled: false,
+          minimized: false,
+          disabled: false
+        }))
+        .slice(0, 9);
+      const indexes: number[][] = LayoutIndexes[layoutArr.length];
+      const newLayouts: Layout[][] = [];
+      indexes.forEach((idxes) => {
+        const arr: Layout[] = [];
+        idxes.forEach((i) => arr.push(layoutArr[i]));
+        newLayouts.push(arr);
+      });
+      setLayouts(newLayouts);
+    });
+    // メインプロセスに準備完了のシグナルを送信
+    window.electron.ipcRenderer.send('renderer-ready');
+    return () => {
+      window.electron.ipcRenderer.removeAllListeners('load-app');
+    };
+  }, []);
+
+  useEffect(() => {
+    // メインプロセスから読込済モジュール情報を受け取る
+    window.electron.ipcRenderer.on('load-sword-module', (_, sword: Sword) => {
       const clone = new Sword(
         sword.modname,
         sword.modtype,
@@ -77,7 +123,6 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
       setSwords((prev) => {
         const sws: Map<string, Sword> = new Map(prev);
         sws.set(clone.modname, clone);
-        console.log({ sws });
         return sws;
       });
       setLayouts((prev) => {
@@ -103,7 +148,7 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
       });
     });
     return () => {
-      window.electron.ipcRenderer.removeAllListeners('message-from-main');
+      window.electron.ipcRenderer.removeAllListeners('load-sword-module');
     };
   }, []);
 
@@ -113,7 +158,9 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
         swords,
         layouts,
         osisRef,
-        setOsisRef
+        setOsisRef,
+        targetWord,
+        setTargetWord
       }}
     >
       {children}

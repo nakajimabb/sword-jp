@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from 'electron';
 import { join } from 'path';
+import * as fs from 'fs';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
 import Sword from '../utils/Sword';
@@ -37,6 +38,19 @@ function createWindow() {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
+}
+
+async function loadSwordModules() {
+  const currentDirectory = process.cwd();
+  const bibleDir = currentDirectory + '/files/BibleTexts';
+  const files = await fs.promises.readdir(bibleDir);
+  const swords = await Promise.all(
+    files.map(async (file) => {
+      const filePath = bibleDir + '/' + file;
+      return await Sword.loadFile(filePath, 'bible');
+    })
+  );
+  mainWindow.webContents.send('load-app', swords);
 }
 
 // This method will be called when Electron has finished
@@ -91,6 +105,10 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'));
 
   createWindow();
+  // レンダラープロセスが準備完了したらモジュールを読み込む
+  ipcMain.on('renderer-ready', () => {
+    loadSwordModules();
+  });
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -122,7 +140,7 @@ async function openFile() {
   const filePath = result.filePaths[0];
   const sword = await Sword.loadFile(filePath, 'bible');
 
-  mainWindow.webContents.send('message-from-main', sword);
+  mainWindow.webContents.send('load-sword-module', sword);
 }
 
 // In this file you can include the rest of your app"s specific main process

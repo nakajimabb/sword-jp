@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import clsx from 'clsx';
 import { NodeObj, createNodeObj, shapeLemma } from './NodeObj';
-// import AppContext from './AppContext';
+import AppContext from './AppContext';
 import { str } from './tools';
 import './assets/passage.css';
 
@@ -19,7 +19,7 @@ type PhraseProps = {
 };
 
 const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
-  // const { targetWord, setTargetWord, touchDevice } = useContext(AppContext);
+  const { targetWord, setTargetWord } = useContext(AppContext);
   const excepts = ['note'];
   const attrs = nodeObj.attrs;
 
@@ -40,9 +40,9 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
 
   const onClick = (e: React.MouseEvent) => {
     onMouseOver(e);
-    // if (targetWord.lemma && !touchDevice) {
-    //   setTargetWord({ ...targetWord, fixed: !targetWord.fixed });
-    // }
+    if (targetWord.lemma) {
+      setTargetWord((prev) => ({ ...prev, fixed: !targetWord.fixed }));
+    }
   };
 
   const currentLemma = () => {
@@ -57,7 +57,7 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
 
   const onMouseOver = async (e: React.MouseEvent) => {
     // const excepts = ['type', 'subType', 'gloss'];
-    if (/*!targetWord.fixed && */ attrs.hasOwnProperty('lemma') || attrs.hasOwnProperty('morph')) {
+    if (!targetWord.fixed && (attrs.hasOwnProperty('lemma') || attrs.hasOwnProperty('morph'))) {
       e.currentTarget.classList.add('highlight2');
       let lemma: string = str(attrs.lemma).split(':').pop() || '';
       if (lemma) lemma = shapeLemma(lemma);
@@ -65,12 +65,12 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
       let morph: string = str(attrs.morph).split(' ').shift() || '';
       morph = str(morph).split(':').pop() || '';
 
-      // setTargetWord({
-      //   ...targetWord,
-      //   morph,
-      //   lemma,
-      //   text: textValue(nodeObj)
-      // });
+      setTargetWord((prev) => ({
+        ...prev,
+        morph,
+        lemma,
+        text: textValue(nodeObj)
+      }));
     }
   };
 
@@ -97,7 +97,6 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
   // };
 
   const curLemma = currentLemma();
-  // const lemmas = targetWord.lemma.split(/[,&]/).map((lem) => shapeLemma(lem));
   const lemmas: string[] = [];
   const color = lemmas.findIndex((lemma) => lemma && lemma === curLemma);
 
