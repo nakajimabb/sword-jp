@@ -43,14 +43,22 @@ function createWindow() {
 async function loadSwordModules() {
   const currentDirectory = process.cwd();
   const bibleDir = currentDirectory + '/files/BibleTexts';
-  const files = await fs.promises.readdir(bibleDir);
-  const swords = await Promise.all(
-    files.map(async (file) => {
+  const bibleFiles = await fs.promises.readdir(bibleDir);
+  const bibles = await Promise.all(
+    bibleFiles.map(async (file) => {
       const filePath = bibleDir + '/' + file;
       return await Sword.loadFile(filePath, 'bible');
     })
   );
-  mainWindow.webContents.send('load-app', swords);
+  const dictDir = currentDirectory + '/files/Dictionaries';
+  const dictFiles = await fs.promises.readdir(dictDir);
+  const dicts = await Promise.all(
+    dictFiles.map(async (file) => {
+      const filePath = dictDir + '/' + file;
+      return await Sword.loadFile(filePath, 'dictionary');
+    })
+  );
+  mainWindow.webContents.send('load-app', bibles.concat(dicts));
 }
 
 // This method will be called when Electron has finished

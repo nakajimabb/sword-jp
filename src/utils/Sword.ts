@@ -1,6 +1,9 @@
 import * as fs from 'fs';
+import * as iconv from 'iconv-lite';
+import { Buffer } from 'buffer';
 import JSZip from 'jszip';
 import { getRawEntry as zTextRawEntry } from './zText';
+import { getRawEntry as rawComRawEntry } from './rawCom';
 import Canon from './Canon';
 
 export type ModType = 'bible' | 'dictionary' | 'morphology';
@@ -20,9 +23,21 @@ export interface ChapterIndex {
   verses: { offset: number; length: number }[];
 }
 
+export interface DictIndex {
+  start: number;
+  length: number;
+  osisRef: string;
+}
+
 export interface IndexesType {
   ot?: { [book: string]: ChapterIndex[] };
   nt?: { [book: string]: ChapterIndex[] };
+  dict_ot?: { [key: string]: DictIndex };
+  dict_nt?: { [key: string]: DictIndex };
+}
+
+export function decodeTextFromUint8Array(u8arr: Uint8Array, encoding = 'CP1252') {
+  return iconv.decode(Buffer.from(u8arr), encoding);
 }
 
 class Sword {
@@ -65,25 +80,42 @@ class Sword {
     const indexes = this.indexes;
     const binary = this.binary;
     if (Sword.supported(moddrv) && encoding && binary && indexes) {
-      let bookIndexes: ChapterIndex[] | undefined;
-      let u8arr: Uint8Array | undefined = undefined;
-
-      if (indexes.nt && book in indexes.nt) {
-        bookIndexes = indexes.nt[book];
-        u8arr = binary.nt;
-      } else if (indexes.ot && book in indexes.ot) {
-        bookIndexes = indexes.ot[book];
-        u8arr = binary.ot;
-      }
-
-      if (bookIndexes && u8arr) {
-        if (moddrv === 'zText' || moddrv === 'zCom') {
+      if (moddrv === 'zText' || moddrv === 'zCom') {
+        let bookIndexes: ChapterIndex[] = [];
+        let u8arr: Uint8Array | undefined = undefined;
+        if (indexes.nt && book in indexes.nt) {
+          bookIndexes = indexes.nt[book];
+          u8arr = binary.nt;
+        } else if (indexes.ot && book in indexes.ot) {
+          bookIndexes = indexes.ot[book];
+          u8arr = binary.ot;
+        }
+        if (bookIndexes.length > 0 && u8arr) {
           return zTextRawEntry(u8arr, bookIndexes, book, chapter, verses, encoding);
         } else {
-          throw Error(`not supported moddrv ${moddrv}`);
+          throw Error(`not found indexes ${moddrv} ${book} ${chapter}`);
+        }
+      } else if (moddrv === 'RawCom') {
+        const dictIndexes: DictIndex[] = [];
+        let u8arr: Uint8Array | undefined = undefined;
+        verses.forEach((verse) => {
+          const osisRef = `${book}.${chapter}:${verse}`;
+          if (indexes.dict_ot && osisRef in indexes.dict_ot) {
+            dictIndexes.push(indexes.dict_ot[osisRef]);
+            u8arr = binary.ot;
+          } else if (indexes.dict_nt && osisRef in indexes.dict_nt) {
+            dictIndexes.push(indexes.dict_nt[osisRef]);
+            u8arr = binary.nt;
+          }
+        });
+
+        if (dictIndexes.length > 0 && u8arr) {
+          return rawComRawEntry(u8arr, dictIndexes, encoding);
+        } else {
+          throw Error(`not found indexes ${moddrv} ${book} ${chapter}`);
         }
       } else {
-        throw Error(`not found indexes ${book} ${chapter}`);
+        throw Error(`not supported moddrv ${moddrv}`);
       }
     }
     throw Error(`not supported data ${moddrv} ${encoding}`);
@@ -162,7 +194,7 @@ class Sword {
   }
 
   public static async createIndexes(
-    u8arr: { [key: string]: Uint8Array },
+    u8arrIndexes: { [key: string]: Uint8Array },
     moddrv: string,
     vers: string
   ): Promise<IndexesType> {
@@ -170,20 +202,31 @@ class Sword {
     let bookPosNT: { start: number; length: number }[] | null = null;
     let rawPosNT: { [key: string]: ChapterIndex[] } = {};
     let rawPosOT: { [key: string]: ChapterIndex[] } = {};
+    let rawPosDictNT: { [key: string]: DictIndex } = {};
+    let rawPosDictOT: { [key: string]: DictIndex } = {};
 
     if (moddrv === 'zText' || moddrv === 'zCom') {
-      if (u8arr.ot_zs || u8arr.ot_zv) {
-        bookPosOT = Sword.getBookPositions(u8arr.ot_zs);
-        rawPosOT = Sword.getChapterVersePositions(u8arr.ot_zv, bookPosOT, 'ot', vers);
+      if (u8arrIndexes.ot_zs || u8arrIndexes.ot_zv) {
+        bookPosOT = Sword.getBookPositions(u8arrIndexes.ot_zs);
+        rawPosOT = Sword.getChapterVersePositions(u8arrIndexes.ot_zv, bookPosOT, 'ot', vers);
       }
-      if (u8arr.nt_zs || u8arr.nt_zv) {
-        bookPosNT = Sword.getBookPositions(u8arr.nt_zs);
-        rawPosNT = Sword.getChapterVersePositions(u8arr.nt_zv, bookPosNT, 'nt', vers);
+      if (u8arrIndexes.nt_zs || u8arrIndexes.nt_zv) {
+        bookPosNT = Sword.getBookPositions(u8arrIndexes.nt_zs);
+        rawPosNT = Sword.getChapterVersePositions(u8arrIndexes.nt_zv, bookPosNT, 'nt', vers);
+      }
+    } else if (moddrv === 'RawCom') {
+      if (u8arrIndexes.ot_vss) {
+        rawPosDictOT = Sword.getDictPositions(u8arrIndexes.ot_vss, 'ot', vers);
+      }
+      if (u8arrIndexes.nt_vss) {
+        rawPosDictNT = Sword.getDictPositions(u8arrIndexes.nt_vss, 'nt', vers);
       }
     }
     return {
       ot: rawPosOT,
-      nt: rawPosNT
+      nt: rawPosNT,
+      dict_ot: rawPosDictOT,
+      dict_nt: rawPosDictNT
     };
   }
 
@@ -264,6 +307,32 @@ class Sword {
       start += 10;
     }); //end books
     return chapterIndexes;
+  }
+
+  private static getDictPositions(u8arr: Uint8Array, otnt: 'ot' | 'nt', vers: string) {
+    let start = 12; // skip 12 byte
+    const view = new DataView(u8arr.buffer, u8arr.byteOffset, u8arr.byteLength);
+
+    const bookInfos = Canon.bookInfos(vers, otnt);
+    const dictIndexes: { [key: string]: DictIndex } = {};
+    Object.entries(bookInfos).forEach(([book, bookInfo]) => {
+      start += 6;
+      for (let chapter = 0; chapter < bookInfo.maxChapter; chapter++) {
+        const verseMax = bookInfo.maxVerses[chapter];
+        start += 6;
+        for (let verse = 0; verse < verseMax && start + 6 < u8arr.length; verse++) {
+          const startPos = view.getUint32(start, true);
+          start += 4;
+          const length = view.getUint16(start, true);
+          start += 2;
+          if (length > 0) {
+            const osisRef = `${book}.${chapter + 1}:${verse + 1}`;
+            dictIndexes[osisRef] = { start: startPos, length: length, osisRef };
+          }
+        }
+      }
+    });
+    return dictIndexes;
   }
 
   private static getBookPositions(u8arr: Uint8Array): { start: number; length: number }[] {

@@ -5,6 +5,8 @@ import AppContext from './AppContext';
 import { str } from './tools';
 import './assets/passage.css';
 
+const INVALID_CHAR = /[^\x09\x0A\x0D\x20-\xFF\x85\xA0-\uD7FF\uE000-\uFDCF\uFDE0-\uFFFD]/gm;
+
 const colors = [
   'text-red-600',
   'text-yellow-500',
@@ -148,7 +150,10 @@ const Passage: React.FC<PassageProps> = ({ osisRef, rawText, showPosition }) => 
 
   useEffect(() => {
     const parser = new DOMParser();
-    const doc = parser.parseFromString('<root>' + rawText + '</root>', 'text/xml');
+    const doc = parser.parseFromString(
+      '<root>' + rawText.replace(INVALID_CHAR, '') + '</root>',
+      'text/xml'
+    );
     if (doc.childNodes.length > 0) {
       setNodeObj(createNodeObj(doc.childNodes[0]));
     } else {

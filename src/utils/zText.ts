@@ -1,11 +1,5 @@
 import * as pako from 'pako';
-import * as iconv from 'iconv-lite';
-import { Buffer } from 'buffer';
-import { ChapterIndex } from './Sword';
-
-function decodeTextFromUint8Array(u8arr: Uint8Array, encoding = 'CP1252') {
-  return iconv.decode(Buffer.from(u8arr), encoding);
-}
+import { ChapterIndex, decodeTextFromUint8Array } from './Sword';
 
 export function getRawEntry(
   uint8Array: Uint8Array,
@@ -17,12 +11,6 @@ export function getRawEntry(
 ) {
   const bookIndex = bookIndexes[chapter - 1];
   if (!bookIndex) {
-    console.log({
-      bookIndexes,
-      book,
-      chapter,
-      verses
-    });
     throw Error(`wrong chapter ${book}.${chapter}`);
   }
   const chapterStartPos = bookIndex.start + bookIndex.offset;
