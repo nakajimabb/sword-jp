@@ -3,6 +3,7 @@ import React, { useContext } from 'react';
 import { Box, Flex } from '@chakra-ui/react';
 import AppContext from './AppContext';
 import SwordView from './SwordView';
+import DictView from './DictView';
 
 const ViewLayout: React.FC = () => {
   const { swords, layouts, osisRef } = useContext(AppContext);
@@ -11,16 +12,26 @@ const ViewLayout: React.FC = () => {
     <Flex h="100%" gap={1}>
       {layouts.map((rowLayouts, i) => {
         return (
-          <Box key={i} flex="1">
+          <Box key={i} minWidth={0} flexGrow={1} flexBasis={0}>
             <Flex direction="column" h="100%" gap={1}>
               {rowLayouts.map((layout, j) => {
-                const sword = swords.get(layout.modname);
-                if (!sword) return null;
-                return (
-                  <Box flex="1" overflowY="auto">
-                    <SwordView key={j} sword={sword} osisRef={osisRef} />
-                  </Box>
-                );
+                if (layout.viewType === 'bible') {
+                  const sword = swords.get(layout.modname);
+                  if (!sword) return null;
+                  return (
+                    <Box key={j} flex="1" overflowY="auto">
+                      <SwordView sword={sword} osisRef={osisRef} />
+                    </Box>
+                  );
+                } else if (layout.viewType === 'dictionary') {
+                  return (
+                    <Box key={j} flex="1" overflowY="auto">
+                      <DictView />
+                    </Box>
+                  );
+                } else {
+                  return null;
+                }
               })}
             </Flex>
           </Box>

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box } from '@chakra-ui/react';
 import Sword from '../../utils/Sword';
-import { Raw } from '../../utils/Sword';
 import Passage from './Passage';
 
 type Props = {
@@ -34,7 +33,7 @@ const SwordView: React.FC<Props> = ({ sword, osisRef }) => {
       </Box>
       <Box px={2} pt={1} pb={3} className={String(sword.confs.Lang ?? '')}>
         {Array.from(rawTexts.entries()).map(([osisRef, rawText], key) => (
-          <Passage key={key} lang={'he'} osisRef={osisRef} rawText={rawText} showPosition="verse" />
+          <Passage key={key} osisRef={osisRef} rawText={rawText} showPosition="verse" />
         ))}
       </Box>
     </Box>

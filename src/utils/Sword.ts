@@ -34,6 +34,7 @@ export interface IndexesType {
   nt?: { [book: string]: ChapterIndex[] };
   dict_ot?: { [key: string]: DictIndex };
   dict_nt?: { [key: string]: DictIndex };
+  dict?: { [key: string]: DictIndex };
 }
 
 export function decodeTextFromUint8Array(u8arr: Uint8Array, encoding = 'CP1252') {
@@ -67,14 +68,33 @@ class Sword {
 
   renderText(osisRef: string) {
     if (this.confs && this.indexes) {
-      const vers = String(this.confs.Versification ?? 'kjv').toLowerCase();
-      const { book, chapter, verses } = Sword.parseOsisRef(osisRef, vers);
-      return this.renderText2(book, chapter, verses);
+      if (this.modtype === 'bible') {
+        const vers = String(this.confs.Versification ?? 'kjv').toLowerCase();
+        const { book, chapter, verses } = Sword.parseOsisRef(osisRef, vers);
+        return this.renderBibleText(book, chapter, verses);
+      } else if (this.modtype === 'dictionary') {
+        return this.renderDictText(osisRef);
+      }
     }
     throw Error(`invalid data`);
   }
 
-  renderText2(book: string, chapter: number, verses: number[]) {
+  renderDictText(osisRef: string) {
+    const rawTexts: Map<string, string> = new Map();
+    if (this.binary.dict && this.indexes.dict) {
+      const indexes = this.indexes.dict;
+      if (indexes && osisRef in indexes) {
+        const encoding = String(this.confs.Encoding) ?? 'CP1252';
+        const index = indexes[osisRef];
+        const data = this.binary.dict.slice(index.start, index.start + index.length);
+        const rawText = decodeTextFromUint8Array(data, encoding);
+        rawTexts.set(osisRef, rawText);
+      }
+    }
+    return rawTexts;
+  }
+
+  renderBibleText(book: string, chapter: number, verses: number[]) {
     const moddrv = this.confs.ModDrv as string;
     const encoding = (this.confs.Encoding ?? 'CP1252') as string;
     const indexes = this.indexes;
@@ -193,7 +213,7 @@ class Sword {
     return verses;
   }
 
-  public static async createIndexes(
+  public static async createBibleIndexes(
     u8arrIndexes: { [key: string]: Uint8Array },
     moddrv: string,
     vers: string
@@ -228,6 +248,30 @@ class Sword {
       dict_ot: rawPosDictOT,
       dict_nt: rawPosDictNT
     };
+  }
+
+  public static createDictIndexes(
+    indexes: Uint8Array,
+    u8arr: Uint8Array,
+    encoding: string
+  ): IndexesType {
+    const view = new DataView(indexes.buffer, indexes.byteOffset, indexes.byteLength);
+    const dictIndexes: { [key: string]: DictIndex } = {};
+    for (let offset = 0; offset + 8 < indexes.length; offset += 8) {
+      const start = view.getUint32(offset, true);
+      const length = view.getUint32(offset + 4, true);
+      if (start + length < u8arr.length) {
+        const data = u8arr.slice(start, start + length);
+        const rawText = decodeTextFromUint8Array(data, encoding);
+        const m = rawText.match(/^(.+)(\r\n|\r|\n)/);
+        if (m) {
+          const osisRef = m[1];
+          const len = m[1].length + m[2].length;
+          dictIndexes[osisRef] = { start: start + len, length: length - len, osisRef };
+        }
+      }
+    }
+    return { dict: dictIndexes };
   }
 
   private static getChapterVersePositions(
@@ -359,7 +403,7 @@ class Sword {
 
     const u8arrBooks: BookU8Arr = {};
     const u8arrIndexes: Partial<
-      Record<'nt_zs' | 'nt_zv' | 'nt_vss' | 'ot_zs' | 'ot_zv' | 'ot_vss', Uint8Array>
+      Record<'nt_zs' | 'nt_zv' | 'nt_vss' | 'ot_zs' | 'ot_zv' | 'ot_vss' | 'dict', Uint8Array>
     > = {};
 
     for (var name in zip.files) {
@@ -391,14 +435,26 @@ class Sword {
               u8arrBooks[m[1]] = u8arr; //
             }
           }
+        } else {
+          if (name.search(/.idx/) !== -1) {
+            u8arrIndexes.dict = u8arr;
+          } else if (name.search(/.dat/) !== -1) {
+            u8arrBooks.dict = u8arr;
+          }
         }
       }
     }
     const moddrv = confs.ModDrv as string;
     const vers = String(confs.Versification ?? 'kjv').toLowerCase();
-    const indexes = await Sword.createIndexes(u8arrIndexes, moddrv, vers);
-    const sword = new Sword(modname, modtype, confs, u8arrBooks, indexes);
-    return sword;
+    if (modtype === 'bible') {
+      const indexes = await Sword.createBibleIndexes(u8arrIndexes, moddrv, vers);
+      return new Sword(modname, modtype, confs, u8arrBooks, indexes);
+    } else if (u8arrIndexes.dict && u8arrBooks.dict) {
+      const encoding = (confs.Encoding ?? 'UTF-8') as string;
+      const indexes = Sword.createDictIndexes(u8arrIndexes.dict, u8arrBooks.dict, encoding);
+      return new Sword(modname, modtype, confs, u8arrBooks, indexes);
+    }
+    throw Error('fail to load sword module');
   }
 }
 
