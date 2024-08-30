@@ -1,9 +1,10 @@
 import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from 'electron';
 import { join } from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
-import Sword from '../utils/Sword';
+import Sword, { ModType } from '../utils/Sword';
 
 let mainWindow: BrowserWindow;
 
@@ -40,23 +41,27 @@ function createWindow() {
   }
 }
 
+function zipFilePaths(dirPath: string) {
+  const files = fs.readdirSync(dirPath);
+  return files
+    .map((file) => dirPath + '/' + file)
+    .filter(
+      (filePath) =>
+        !fs.lstatSync(filePath).isDirectory() && path.extname(filePath).toLowerCase() === '.zip'
+    );
+}
+
 async function loadSwordModules() {
   const currentDirectory = process.cwd();
   const bibleDir = currentDirectory + '/files/BibleTexts';
-  const bibleFiles = await fs.promises.readdir(bibleDir);
+  const biblePaths = zipFilePaths(bibleDir);
   const bibles = await Promise.all(
-    bibleFiles.map(async (file) => {
-      const filePath = bibleDir + '/' + file;
-      return await Sword.loadFile(filePath, 'bible');
-    })
+    biblePaths.map(async (filePath) => await Sword.loadFile(filePath, 'bible'))
   );
   const dictDir = currentDirectory + '/files/Dictionaries';
-  const dictFiles = await fs.promises.readdir(dictDir);
+  const dictPaths = zipFilePaths(dictDir);
   const dicts = await Promise.all(
-    dictFiles.map(async (file) => {
-      const filePath = dictDir + '/' + file;
-      return await Sword.loadFile(filePath, 'dictionary');
-    })
+    dictPaths.map(async (filePath) => await Sword.loadFile(filePath, 'dictionary'))
   );
   mainWindow.webContents.send('load-app', bibles.concat(dicts));
 }
@@ -72,9 +77,13 @@ app.whenReady().then(() => {
       label: 'ファイル',
       submenu: [
         {
-          label: 'モジュール読込',
+          label: 'load Bible',
           accelerator: 'CmdOrCtrl+O',
-          click: openFile
+          click: () => openFile('bible')
+        },
+        {
+          label: 'load Dictionary',
+          click: () => openFile('dictionary')
         },
         {
           label: '開発ツール',
@@ -134,7 +143,7 @@ app.on('window-all-closed', () => {
   }
 });
 
-async function openFile() {
+async function openFile(modtype: ModType) {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile'],
     title: 'ファイルを選択する',
@@ -146,8 +155,7 @@ async function openFile() {
     ]
   });
   const filePath = result.filePaths[0];
-  const sword = await Sword.loadFile(filePath, 'bible');
-
+  const sword = await Sword.loadFile(filePath, modtype);
   mainWindow.webContents.send('load-sword-module', sword);
 }
 
