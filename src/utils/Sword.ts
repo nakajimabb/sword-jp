@@ -72,7 +72,7 @@ class Sword {
         const vers = String(this.confs.Versification ?? 'kjv').toLowerCase();
         const { book, chapter, verses } = Sword.parseOsisRef(osisRef, vers);
         return this.renderBibleText(book, chapter, verses);
-      } else if (this.modtype === 'dictionary') {
+      } else {
         return this.renderDictText(osisRef);
       }
     }

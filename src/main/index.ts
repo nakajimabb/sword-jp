@@ -63,7 +63,12 @@ async function loadSwordModules() {
   const dicts = await Promise.all(
     dictPaths.map(async (filePath) => await Sword.loadFile(filePath, 'dictionary'))
   );
-  mainWindow.webContents.send('load-app', bibles.concat(dicts));
+  const morphDir = currentDirectory + '/files/Morphologies';
+  const morphPaths = zipFilePaths(morphDir);
+  const morphs = await Promise.all(
+    morphPaths.map(async (filePath) => await Sword.loadFile(filePath, 'morphology'))
+  );
+  mainWindow.webContents.send('load-app', bibles.concat(dicts).concat(morphs));
 }
 
 // This method will be called when Electron has finished

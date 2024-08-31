@@ -1,15 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { Box } from '@chakra-ui/react';
-import Sword from '../../utils/Sword';
-import Passage from './Passage';
+import { Box, Flex, Text } from '@chakra-ui/react';
+import { PiPushPinSimpleFill, PiPushPinSimpleSlashFill } from 'react-icons/pi';
+import DictPassage from './DictPassage';
+import { hebrewOrGreek } from './tools';
 import { useAppContext } from './AppContext';
 
 const DictView: React.FC = () => {
   const [rawTexts, setRawTexts] = useState<Map<string, string[]>>(new Map());
+  const [morphTexts, setMorphTexts] = useState<string[]>([]);
   const { targetWord, swords } = useAppContext();
 
   useEffect(() => {
     (async () => {
+      const morphs = getMorphologies();
+      const morphTxts = morphs
+        .map((morph) => {
+          if (targetWord.morph)
+            return Array.from(morph.renderText(targetWord.morph).values()) ?? [];
+          else return [];
+        })
+        .flat()
+        .filter((str) => !!str);
+      setMorphTexts(morphTxts);
       const texts: Map<string, string[]> = new Map();
       const dicts = getDictionaries();
       dicts.forEach((dict) => {
@@ -21,6 +33,10 @@ const DictView: React.FC = () => {
       setRawTexts(texts);
     })();
   }, [targetWord, swords]);
+
+  function getMorphologies() {
+    return Array.from(swords.values()).filter((sword) => sword.modtype === 'morphology');
+  }
 
   function getDictionaries() {
     return Array.from(swords.values()).filter((sword) => sword.modtype === 'dictionary');
@@ -39,21 +55,50 @@ const DictView: React.FC = () => {
       >
         Dictionary
       </Box>
-      <Box px={2} pt={1} pb={3}>
-        {Array.from(rawTexts.entries()).map(([modname, rawTexts]) => {
+      <Box px={2}>
+        <Flex>
+          <Box fontSize="larger">
+            {targetWord.text && (
+              <>
+                <span className={hebrewOrGreek(targetWord.text)}>{targetWord.text}</span>
+              </>
+            )}
+          </Box>
+          &emsp;
+          <Box fontSize="sm" pt={2}>
+            {targetWord.lemma}
+          </Box>
+          &emsp;
+          <Box ml="auto" pt={2}>
+            {targetWord.fixed ? <PiPushPinSimpleFill /> : <PiPushPinSimpleSlashFill />}
+          </Box>
+        </Flex>
+        <Flex>
+          <Box whiteSpace="pre-line" fontSize="smaller">
+            {morphTexts.map((text) => (
+              <>
+                <Text as="span" color="gray.500" fontSize="smaller">
+                  {targetWord.morph}
+                </Text>
+                &nbsp;
+                <DictPassage rawText={text} />
+              </>
+            ))}
+          </Box>
+        </Flex>
+      </Box>
+      <hr />
+      <Box p={2}>
+        {Array.from(rawTexts.entries()).map(([modname, texts]) => {
           return (
-            <div>
-              <div>
-                {targetWord.text} {targetWord.lemma} {targetWord.morph}
-              </div>
-              <hr />
-              <div>{modname}</div>
-              <div>
-                {rawTexts.map((rawText) => (
-                  <div>{rawText}</div>
+            <>
+              <Box>{modname}</Box>
+              <Box fontSize="small" whiteSpace="pre-line">
+                {texts.map((rawText) => (
+                  <DictPassage rawText={rawText} />
                 ))}
-              </div>
-            </div>
+              </Box>
+            </>
           );
         })}
       </Box>
