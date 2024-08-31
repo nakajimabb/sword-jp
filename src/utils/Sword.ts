@@ -172,7 +172,7 @@ class Sword {
     return { modname, confs };
   }
 
-  private static parseOsisRef(osisRef: string, vers: string) {
+  public static parseOsisRef(osisRef: string, vers: string) {
     const m = osisRef.match(/^(\w+)\.(\d+)(:([\d-,]+))*$/);
     if (m) {
       const book = m[1];
