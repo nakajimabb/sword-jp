@@ -1,10 +1,10 @@
 import React from 'react';
 import { ChakraProvider } from '@chakra-ui/react';
-import { Box, Flex } from '@chakra-ui/react';
+import { Flex } from '@chakra-ui/react';
 import { AppContextProvider } from './AppContext';
 import AppBar from './AppBar';
+import WorkSpace from './WorkSpace';
 import './assets/passage.css';
-import ViewLayout from './ViewLayout';
 
 function App(): JSX.Element {
   return (
@@ -13,9 +13,7 @@ function App(): JSX.Element {
         <ChakraProvider>
           <Flex direction="column" width="100vw" height="100vh">
             <AppBar />
-            <Box flex="1" overflow="hidden">
-              <ViewLayout />
-            </Box>
+            <WorkSpace />
           </Flex>
         </ChakraProvider>
       </AppContextProvider>

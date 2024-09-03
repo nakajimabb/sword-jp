@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Box } from '@chakra-ui/react';
+import { Box, Tooltip } from '@chakra-ui/react';
 import Sword from '../../utils/Sword';
 import Passage from './Passage';
+import { truncate } from './tools';
 
 type Props = {
   sword: Sword;
@@ -29,7 +30,15 @@ const SwordView: React.FC<Props> = ({ sword, osisRef }) => {
         bg="yellow.200"
         h="1.25rem"
       >
-        {sword.modname}
+        <Tooltip
+          hasArrow
+          fontSize="small"
+          bg="gray.300"
+          color="black"
+          label={String(sword?.confs?.Description ?? sword.modname)}
+        >
+          {truncate(String(sword?.confs?.Description ?? sword.modname), 24)}
+        </Tooltip>
       </Box>
       <Box px={2} pt={1} pb={3} className={String(sword.confs.Lang ?? '')}>
         {Array.from(rawTexts.entries()).map(([osisRef, rawText], key) => (

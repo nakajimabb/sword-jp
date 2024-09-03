@@ -47,19 +47,38 @@ class Sword {
   confs: { [key: string]: string | string[] };
   binary: BookU8Arr;
   indexes: IndexesType;
+  references?: {
+    [lemma: string]: { [book: string]: { [chapter: number]: { [verse: number]: number } } };
+  };
 
   constructor(
     modname: string,
     modtype: ModType,
     confs: { [key: string]: string | string[] },
     binary: BookU8Arr,
-    indexes: IndexesType
+    indexes: IndexesType,
+    references?: {
+      [lemma: string]: { [book: string]: { [chapter: number]: { [verse: number]: number } } };
+    }
   ) {
     this.modname = modname;
     this.modtype = modtype;
     this.confs = confs;
     this.binary = binary;
     this.indexes = indexes;
+    this.references = references;
+  }
+
+  async loadReference(path: string) {
+    const buffer = fs.readFileSync(path);
+    const zip = await JSZip.loadAsync(buffer);
+    for (const name in zip.files) {
+      const m = name.match(/^(\w+).json$/);
+      if (m) {
+        const json = await zip.files[name].async('text');
+        this.references = JSON.parse(json);
+      }
+    }
   }
 
   static supported(moddrv: string) {
@@ -406,7 +425,7 @@ class Sword {
       Record<'nt_zs' | 'nt_zv' | 'nt_vss' | 'ot_zs' | 'ot_zv' | 'ot_vss' | 'dict', Uint8Array>
     > = {};
 
-    for (var name in zip.files) {
+    for (const name in zip.files) {
       if (name.search('.conf') === -1) {
         const u8arr = await zip.files[name].async('uint8array');
         if (confs.ModDrv === 'zText' || confs.ModDrv === 'zCom') {

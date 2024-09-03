@@ -25,7 +25,10 @@ export type ContextType = {
   targetWord: TargetWord;
   setTargetWord: React.Dispatch<React.SetStateAction<TargetWord>>;
   dictionaries: Sword[];
-  morphologies: Sword[];
+  searchResult: Map<string, { [modname: string]: number }>;
+  setSearchResult: React.Dispatch<React.SetStateAction<Map<string, { [modname: string]: number }>>>;
+  workSpaceTab: 0 | 1;
+  setWorkSpaceTab: React.Dispatch<React.SetStateAction<0 | 1>>;
 };
 
 const AppContext = createContext({
@@ -36,7 +39,10 @@ const AppContext = createContext({
   targetWord: {},
   setTargetWord: (_: TargetWord) => {},
   dictionaries: [],
-  morphologies: []
+  searchResult: new Map(),
+  setSearchResult: (_: Map<string, { [modname: string]: number }>) => {},
+  workSpaceTab: 0,
+  setWorkSpaceTab: (_: 0 | 1) => {}
 } as ContextType);
 
 const LayoutIndexes: number[][][] = [
@@ -81,14 +87,20 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
   const [osisRef, setOsisRef] = useState('Gen.1');
   const [targetWord, setTargetWord] = useState<TargetWord>({});
   const [dictionaries, setDictionaries] = useState<Sword[]>([]);
-  const [morphologies, setMorphologies] = useState<Sword[]>([]);
+  const [searchResult, setSearchResult] = useState<Map<string, { [modname: string]: number }>>(
+    new Map()
+  );
+  const [workSpaceTab, setWorkSpaceTab] = useState<0 | 1>(0);
 
   useEffect(() => {
     // メインプロセスからのメッセージを受け取る
     window.electron.ipcRenderer.on('load-app', (_, modules: Sword[]) => {
       const swds: Map<string, Sword> = new Map();
       modules.forEach((m) =>
-        swds.set(m.modname, new Sword(m.modname, m.modtype, m.confs, m.binary, m.indexes))
+        swds.set(
+          m.modname,
+          new Sword(m.modname, m.modtype, m.confs, m.binary, m.indexes, m.references)
+        )
       );
       setSwords(swds);
       const swdarr = Array.from(swds.values());
@@ -114,7 +126,8 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
         sword.modtype,
         sword.confs,
         sword.binary,
-        sword.indexes
+        sword.indexes,
+        sword.references
       );
       setSwords((prev) => {
         const swds: Map<string, Sword> = new Map(prev);
@@ -179,7 +192,10 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
         targetWord,
         setTargetWord,
         dictionaries,
-        morphologies
+        searchResult,
+        setSearchResult,
+        workSpaceTab,
+        setWorkSpaceTab
       }}
     >
       {children}

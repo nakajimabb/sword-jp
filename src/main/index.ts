@@ -68,6 +68,18 @@ async function loadSwordModules() {
   const morphs = await Promise.all(
     morphPaths.map(async (filePath) => await Sword.loadFile(filePath, 'morphology'))
   );
+  const referenceDir = currentDirectory + '/files/References';
+  await Promise.all(
+    Array.from(bibles.values()).map(async (bible) => {
+      const path = referenceDir + '/' + `${bible.modname}.json.zip`;
+      if (fs.existsSync(path)) {
+        await bible.loadReference(path);
+        return bible.modname;
+      }
+      return '';
+    })
+  );
+
   mainWindow.webContents.send('load-app', bibles.concat(dicts).concat(morphs));
 }
 

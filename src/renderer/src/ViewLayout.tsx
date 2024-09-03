@@ -5,11 +5,15 @@ import AppContext from './AppContext';
 import SwordView from './SwordView';
 import DictView from './DictView';
 
-const ViewLayout: React.FC = () => {
+type Prop = {
+  hidden?: boolean;
+};
+
+const ViewLayout: React.FC<Prop> = ({ hidden = false }) => {
   const { swords, layouts, osisRef } = useContext(AppContext);
 
   return (
-    <Flex h="100%" gap={1}>
+    <Flex h="100%" gap={1} hidden={hidden}>
       {layouts.map((rowLayouts, i) => {
         return (
           <Box key={i} minWidth={0} flexGrow={1} flexBasis={0}>

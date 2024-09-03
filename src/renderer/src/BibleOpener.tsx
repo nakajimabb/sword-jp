@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext } from 'react';
-
 import {
   Grid,
   GridItem,
@@ -29,7 +28,6 @@ import {
   ChevronDownIcon
 } from '@chakra-ui/icons';
 import { GiOpenBook } from 'react-icons/gi';
-
 import Sword from '../../utils/Sword';
 import Canon from '../../utils/Canon';
 import canon_jp from '../../utils/canons/locale/ja.json';
@@ -39,6 +37,7 @@ const BibleOpener: React.FC = () => {
   const [tabIndex, setTabIndex] = useState(0);
   const [book, setBook] = useState('Gen');
   const [chapter, setChapter] = useState(1);
+
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { osisRef, setOsisRef } = useContext(AppContext);
   const canon = Canon.canons.nrsv;
@@ -55,7 +54,7 @@ const BibleOpener: React.FC = () => {
 
   return (
     <>
-      <Flex gap={2}>
+      <Flex gap={2} width="280px">
         <IconButton
           size="sm"
           isRound={true}
@@ -76,7 +75,7 @@ const BibleOpener: React.FC = () => {
           <InputLeftAddon onClick={onOpen}>
             <GiOpenBook size={20} color="#888" />
           </InputLeftAddon>
-          <Input type="tel" value={osisRef} onChange={(e) => setOsisRef(e.target.value)} />
+          <Input value={osisRef} onChange={(e) => setOsisRef(e.target.value)} />
           <Stack direction="column" spacing="0" justifyContent="center">
             <InputRightAddon
               height="50%"
@@ -111,6 +110,7 @@ const BibleOpener: React.FC = () => {
           </Stack>
         </InputGroup>
       </Flex>
+
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>

@@ -1,9 +1,144 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Flex, Text } from '@chakra-ui/react';
+import {
+  Badge,
+  Box,
+  Flex,
+  Text,
+  IconButton,
+  Input,
+  InputGroup,
+  InputRightAddon,
+  Stack,
+  Tooltip
+} from '@chakra-ui/react';
+import { ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons';
 import { PiPushPinSimpleFill, PiPushPinSimpleSlashFill } from 'react-icons/pi';
+import { BsSearch } from 'react-icons/bs';
 import DictPassage from './DictPassage';
 import { hebrewOrGreek } from './tools';
 import { useAppContext } from './AppContext';
+import Canon from '../../utils/Canon';
+import canon_jp from '../../utils/canons/locale/ja.json';
+
+const DictOpener: React.FC = () => {
+  const { swords, targetWord, setTargetWord, setSearchResult, setWorkSpaceTab } = useAppContext();
+  const canon = Canon.canons.nrsv;
+
+  function booksToIndexObject(): { [key: string]: number } {
+    const books = Object.keys(canon.ot ?? {}).concat(Object.keys(canon.nt ?? {}));
+    return books.reduce((obj, book, index) => {
+      obj[book] = index;
+      return obj;
+    }, {});
+  }
+
+  function searchWord() {
+    if (targetWord.lemma && targetWord.lemma.trim()) {
+      const bookIndexes = booksToIndexObject();
+      const search: Map<string, { [modname: string]: number }> = new Map();
+      const lemma = targetWord.lemma.trim();
+      bibles().forEach((bible) => {
+        const references = bible.references;
+        if (references && references[lemma]) {
+          const refs = references[lemma];
+          const keys = Object.keys(refs).sort(
+            (book1, book2) => bookIndexes[book1] - bookIndexes[book2]
+          );
+          keys.forEach((book) => {
+            const counts = search.get(book) ?? {};
+            const ref = refs[book];
+            counts[bible.modname] = Object.values(ref).reduce(
+              (accum, verseCount) =>
+                Object.values(verseCount).reduce((accum2, vnum) => accum2 + vnum, accum),
+              0
+            );
+            search.set(book, counts);
+          });
+        }
+      });
+      setSearchResult(search);
+      setWorkSpaceTab(1);
+    }
+  }
+
+  function bibles() {
+    return Array.from(swords.values()).filter((sword) => sword.modtype === 'bible');
+  }
+
+  return (
+    <>
+      <InputGroup cursor="pointer" size="xs" width="200px">
+        <IconButton
+          mr={1}
+          isRound={true}
+          aria-label="Search database"
+          icon={targetWord.fixed ? <PiPushPinSimpleFill /> : <PiPushPinSimpleSlashFill />}
+          onClick={() => {
+            if (targetWord.lemma) {
+              setTargetWord((prev) => ({ ...prev, fixed: !prev.fixed }));
+            }
+          }}
+        />
+        <Input
+          value={targetWord.lemma}
+          onChange={(e) => setTargetWord((prev) => ({ ...prev, lemma: e.target.value }))}
+        />
+        <Stack h="24px" direction="column" spacing="0" justifyContent="center">
+          <InputRightAddon
+            height="50%"
+            onClick={() => {
+              setTargetWord((prev) => {
+                if (prev.lemma) {
+                  const match = prev.lemma.match(/^(.*?)(\d+)$/);
+                  if (match) {
+                    const numstr = match[2];
+                    const num = Number(numstr);
+                    const numstr2 = String(num + 1).padStart(numstr.length, '0');
+                    return { ...prev, lemma: match[1] + numstr2 };
+                  }
+                }
+                return prev;
+              });
+            }}
+          >
+            <ChevronUpIcon />
+          </InputRightAddon>
+          <InputRightAddon
+            height="50%"
+            onClick={() => {
+              setTargetWord((prev) => {
+                if (prev.lemma) {
+                  const match = prev.lemma.match(/^(.*?)(\d+)$/);
+                  if (match) {
+                    const numstr = match[2];
+                    const num = Number(numstr);
+                    if (num > 1) {
+                      const numstr2 = String(num - 1).padStart(numstr.length, '0');
+                      return { ...prev, lemma: match[1] + numstr2 };
+                    }
+                  }
+                }
+                return prev;
+              });
+            }}
+          >
+            <ChevronDownIcon />
+          </InputRightAddon>
+        </Stack>
+        <Tooltip label="語彙検索">
+          <IconButton
+            ml={1}
+            size="xs"
+            isRound={true}
+            aria-label="Search database"
+            icon={<BsSearch />}
+            onClick={searchWord}
+          />
+        </Tooltip>
+      </InputGroup>
+    </>
+  );
+};
 
 const DictView: React.FC = () => {
   const [rawTexts, setRawTexts] = useState<Map<string, string[]>>(new Map());
@@ -42,8 +177,17 @@ const DictView: React.FC = () => {
     return Array.from(swords.values()).filter((sword) => sword.modtype === 'dictionary');
   }
 
+  function getSword(modname: string) {
+    return Array.from(swords.values()).find((sword) => sword.modname === modname);
+  }
+
+  function swordDesc(modname: string) {
+    const sword = getSword(modname);
+    return String(sword?.confs?.Description ?? modname);
+  }
+
   return (
-    <Box border="1px" borderColor="gray.100" bg="gray.100">
+    <Box border="1px" borderColor="gray.100">
       <Box
         px="0.5rem"
         fontSize="sm"
@@ -55,24 +199,13 @@ const DictView: React.FC = () => {
       >
         Dictionary
       </Box>
-      <Box px={2}>
-        <Flex>
-          <Box fontSize="larger">
-            {targetWord.text && (
-              <>
-                <span className={hebrewOrGreek(targetWord.text)}>{targetWord.text}</span>
-              </>
-            )}
-          </Box>
-          &emsp;
-          <Box fontSize="sm" pt={2}>
-            {targetWord.lemma}
-          </Box>
-          &emsp;
-          <Box ml="auto" pt={2}>
-            {targetWord.fixed ? <PiPushPinSimpleFill /> : <PiPushPinSimpleSlashFill />}
-          </Box>
-        </Flex>
+      <Box p={2}>
+        <DictOpener />
+        <Box fontSize="larger">
+          {targetWord.text && (
+            <span className={hebrewOrGreek(targetWord.text)}>{targetWord.text}</span>
+          )}
+        </Box>
         <Flex>
           <Box whiteSpace="pre-line" fontSize="smaller">
             {morphTexts.map((text) => (
@@ -92,7 +225,9 @@ const DictView: React.FC = () => {
         {Array.from(rawTexts.entries()).map(([modname, texts]) => {
           return (
             <>
-              <Box>{modname}</Box>
+              <Badge variant="outline" colorScheme="green">
+                {swordDesc(modname)}
+              </Badge>
               <Box fontSize="small" whiteSpace="pre-line">
                 {texts.map((rawText) => (
                   <DictPassage rawText={rawText} />
