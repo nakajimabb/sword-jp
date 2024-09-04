@@ -41,15 +41,19 @@ export function decodeTextFromUint8Array(u8arr: Uint8Array, encoding = 'CP1252')
   return iconv.decode(Buffer.from(u8arr), encoding);
 }
 
+export type WordReference = { [book: string]: { [chapter: number]: { [verse: number]: number } } };
+
+export type BookReference = {
+  [lemma: string]: WordReference;
+};
+
 class Sword {
   modname: string;
   modtype: ModType;
   confs: { [key: string]: string | string[] };
   binary: BookU8Arr;
   indexes: IndexesType;
-  references?: {
-    [lemma: string]: { [book: string]: { [chapter: number]: { [verse: number]: number } } };
-  };
+  references?: BookReference;
 
   constructor(
     modname: string,

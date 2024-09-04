@@ -18,10 +18,11 @@ import DictPassage from './DictPassage';
 import { hebrewOrGreek } from './tools';
 import { useAppContext } from './AppContext';
 import Canon from '../../utils/Canon';
-import canon_jp from '../../utils/canons/locale/ja.json';
+import { WordReference } from '../../utils/Sword';
 
 const DictOpener: React.FC = () => {
-  const { swords, targetWord, setTargetWord, setSearchResult, setWorkSpaceTab } = useAppContext();
+  const { swords, targetWord, setTargetWord, searchResult, setSearchResult, setWorkSpaceTab } =
+    useAppContext();
   const canon = Canon.canons.nrsv;
 
   function booksToIndexObject(): { [key: string]: number } {
@@ -33,31 +34,31 @@ const DictOpener: React.FC = () => {
   }
 
   function searchWord() {
+    const maxSearch = 3;
     if (targetWord.lemma && targetWord.lemma.trim()) {
       const bookIndexes = booksToIndexObject();
-      const search: Map<string, { [modname: string]: number }> = new Map();
       const lemma = targetWord.lemma.trim();
+      const wordRefs: Map<string, WordReference> = new Map();
       bibles().forEach((bible) => {
         const references = bible.references;
         if (references && references[lemma]) {
-          const refs = references[lemma];
-          const keys = Object.keys(refs).sort(
+          // wordRefs.set(bible.modname, references[lemma]);
+          const books = Object.keys(references[lemma]).sort(
             (book1, book2) => bookIndexes[book1] - bookIndexes[book2]
-          );
-          keys.forEach((book) => {
-            const counts = search.get(book) ?? {};
-            const ref = refs[book];
-            counts[bible.modname] = Object.values(ref).reduce(
-              (accum, verseCount) =>
-                Object.values(verseCount).reduce((accum2, vnum) => accum2 + vnum, accum),
-              0
-            );
-            search.set(book, counts);
-          });
+          ); // sorted bible book key
+          const sortedWordRefs: WordReference = books.reduce((accum, book) => {
+            accum[book] = references[lemma][book];
+            return accum;
+          }, {});
+          wordRefs.set(bible.modname, sortedWordRefs);
         }
       });
-      setSearchResult(search);
-      setWorkSpaceTab(1);
+      setSearchResult((prev) =>
+        prev
+          .concat({ searchKey: lemma, wordRefs })
+          .slice(prev.length >= maxSearch ? prev.length + 1 - maxSearch : 0)
+      );
+      setWorkSpaceTab(searchResult.length + 1 >= maxSearch ? maxSearch : searchResult.length + 1);
     }
   }
 

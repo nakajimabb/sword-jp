@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, createContext } from 'react';
-import Sword from '../../utils/Sword';
+import Sword, { WordReference } from '../../utils/Sword';
 
 export type Layout = {
   viewType: 'bible' | 'dictionary';
@@ -25,10 +25,20 @@ export type ContextType = {
   targetWord: TargetWord;
   setTargetWord: React.Dispatch<React.SetStateAction<TargetWord>>;
   dictionaries: Sword[];
-  searchResult: Map<string, { [modname: string]: number }>;
-  setSearchResult: React.Dispatch<React.SetStateAction<Map<string, { [modname: string]: number }>>>;
-  workSpaceTab: 0 | 1;
-  setWorkSpaceTab: React.Dispatch<React.SetStateAction<0 | 1>>;
+  searchResult: {
+    searchKey: string;
+    wordRefs: Map<string, WordReference>;
+  }[];
+  setSearchResult: React.Dispatch<
+    React.SetStateAction<
+      {
+        searchKey: string;
+        wordRefs: Map<string, WordReference>;
+      }[]
+    >
+  >;
+  workSpaceTab: number;
+  setWorkSpaceTab: React.Dispatch<React.SetStateAction<number>>;
 };
 
 const AppContext = createContext({
@@ -39,10 +49,15 @@ const AppContext = createContext({
   targetWord: {},
   setTargetWord: (_: TargetWord) => {},
   dictionaries: [],
-  searchResult: new Map(),
-  setSearchResult: (_: Map<string, { [modname: string]: number }>) => {},
+  searchResult: [],
+  setSearchResult: (
+    _: {
+      searchKey: string;
+      wordRefs: Map<string, WordReference>;
+    }[]
+  ) => {},
   workSpaceTab: 0,
-  setWorkSpaceTab: (_: 0 | 1) => {}
+  setWorkSpaceTab: (_: number) => {}
 } as ContextType);
 
 const LayoutIndexes: number[][][] = [
@@ -87,10 +102,13 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
   const [osisRef, setOsisRef] = useState('Gen.1');
   const [targetWord, setTargetWord] = useState<TargetWord>({});
   const [dictionaries, setDictionaries] = useState<Sword[]>([]);
-  const [searchResult, setSearchResult] = useState<Map<string, { [modname: string]: number }>>(
-    new Map()
-  );
-  const [workSpaceTab, setWorkSpaceTab] = useState<0 | 1>(0);
+  const [searchResult, setSearchResult] = useState<
+    {
+      searchKey: string;
+      wordRefs: Map<string, WordReference>; // modname: WordReference
+    }[]
+  >([]);
+  const [workSpaceTab, setWorkSpaceTab] = useState<number>(0);
 
   useEffect(() => {
     // メインプロセスからのメッセージを受け取る
