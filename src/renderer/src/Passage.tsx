@@ -7,6 +7,8 @@ import './assets/passage.css';
 
 const INVALID_CHAR = /[^\x09\x0A\x0D\x20-\xFF\x85\xA0-\uD7FF\uE000-\uFDCF\uFDE0-\uFFFD]/gm;
 
+export type ViewOptions = { viewChapter: boolean; viewVerse: boolean; lineBreak: boolean };
+
 const colors = [
   'text-red-600',
   'text-yellow-500',
@@ -137,10 +139,10 @@ const Phrase = React.memo(MuiPhrase, ({ nodeObj: prevObj }, { nodeObj: nextObj }
 interface PassageProps {
   osisRef: string;
   rawText: string;
-  showPosition: 'chapter verse' | 'verse' | 'none';
+  viewOptions: ViewOptions;
 }
 
-const Passage: React.FC<PassageProps> = ({ osisRef, rawText, showPosition }) => {
+const Passage: React.FC<PassageProps> = ({ osisRef, rawText, viewOptions }) => {
   const [nodeObj, setNodeObj] = useState<NodeObj>({
     tag: 'root',
     value: '',
@@ -167,20 +169,30 @@ const Passage: React.FC<PassageProps> = ({ osisRef, rawText, showPosition }) => 
   }, [rawText]);
 
   const getPosition = () => {
+    let str = '';
     const m = osisRef.match(/(\d+):(\d+)$/);
     if (m) {
-      if (showPosition === 'chapter verse') {
-        return m[0];
-      } else if (showPosition === 'verse') {
-        return m[2];
+      if (viewOptions.viewChapter) {
+        str += m[1];
+      }
+      if (viewOptions.viewVerse) {
+        if (viewOptions.viewChapter) str += ':';
+        str += m[2];
       }
     }
-    return '';
+    return str;
+  };
+
+  const showPosition = () => {
+    const showpos: string[] = [];
+    if (viewOptions.viewChapter) showpos.push('chapter');
+    if (viewOptions.viewVerse) showpos.push('verse');
+    return showpos.join(' ');
   };
 
   return (
     <>
-      {<div className={showPosition}>{getPosition()}</div>}
+      {<div className={showPosition()}>{getPosition()}</div>}
       <Phrase nodeObj={nodeObj} />
     </>
   );

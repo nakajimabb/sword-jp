@@ -89,12 +89,20 @@ class Sword {
     return ['zText', 'zCom', 'RawCom'].includes(moddrv);
   }
 
-  renderText(osisRef: string) {
+  renderText(osisRef: string | string[]) {
     if (this.confs && this.indexes) {
       if (this.modtype === 'bible') {
         const vers = String(this.confs.Versification ?? 'kjv').toLowerCase();
-        const { book, chapter, verses } = Sword.parseOsisRef(osisRef, vers);
-        return this.renderBibleText(book, chapter, verses);
+        const positions = Sword.parseOsisRefs(osisRef, vers);
+        let rawTexts: Map<string, string> = new Map();
+        positions.forEach((verses, key) => {
+          const ss = key.split('.');
+          const book = ss[0];
+          const chapter = Number(ss[1]);
+          const texts = this.renderBibleText(book, chapter, verses);
+          rawTexts = new Map([...rawTexts, ...texts]); // merge
+        });
+        return rawTexts;
       } else {
         return this.renderDictText(osisRef);
       }
@@ -102,18 +110,21 @@ class Sword {
     throw Error(`invalid data`);
   }
 
-  renderDictText(osisRef: string) {
+  renderDictText(osisRef: string | string[]) {
+    const refs = typeof osisRef === 'string' ? [osisRef] : osisRef;
     const rawTexts: Map<string, string> = new Map();
-    if (this.binary.dict && this.indexes.dict) {
-      const indexes = this.indexes.dict;
-      if (indexes && osisRef in indexes) {
-        const encoding = String(this.confs.Encoding) ?? 'CP1252';
-        const index = indexes[osisRef];
-        const data = this.binary.dict.slice(index.start, index.start + index.length);
-        const rawText = decodeTextFromUint8Array(data, encoding);
-        rawTexts.set(osisRef, rawText);
+    refs.forEach((ref) => {
+      if (this.binary.dict && this.indexes.dict) {
+        const indexes = this.indexes.dict;
+        if (indexes && ref in indexes) {
+          const encoding = String(this.confs.Encoding) ?? 'CP1252';
+          const index = indexes[ref];
+          const data = this.binary.dict.slice(index.start, index.start + index.length);
+          const rawText = decodeTextFromUint8Array(data, encoding);
+          rawTexts.set(ref, rawText);
+        }
       }
-    }
+    });
     return rawTexts;
   }
 
@@ -193,6 +204,18 @@ class Sword {
       }
     }
     return { modname, confs };
+  }
+
+  public static parseOsisRefs(osisRef: string | string[], vers: string) {
+    const refs = typeof osisRef === 'string' ? [osisRef] : osisRef;
+    const positions: Map<string, number[]> = new Map();
+    refs
+      .map((ref) => Sword.parseOsisRef(ref, vers))
+      .forEach(({ book, chapter, verses }) => {
+        const key = `${book}.${chapter}`;
+        positions.set(key, (positions.get(key) ?? []).concat(verses));
+      });
+    return positions;
   }
 
   public static parseOsisRef(osisRef: string, vers: string) {

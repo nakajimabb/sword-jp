@@ -1,21 +1,33 @@
 import { useState, useEffect, useContext } from 'react';
-import { Box, Flex, IconButton, Select, Tabs, TabList, Tab } from '@chakra-ui/react';
+import {
+  Box,
+  Flex,
+  IconButton,
+  InputGroup,
+  InputRightAddon,
+  Select,
+  Stack,
+  Tabs,
+  TabList,
+  Tab
+} from '@chakra-ui/react';
+import { ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons';
 import { CiSettings } from 'react-icons/ci';
 import BibleOpener from './BibleOpener';
-import AppContext from './AppContext';
-import Canon from '../../utils/Canon';
+import AppContext, { SEARCH_ITEM_SIZE } from './AppContext';
 import canon_jp from '../../utils/canons/locale/ja.json';
 import './assets/passage.css';
+import { WordReference } from 'src/utils/Sword';
 
 function AppBar(): JSX.Element {
   const [searchOptions, setSearchOptions] = useState<{ label: string; value: string }[][]>([]);
-  const { searchResult, workSpaceTab, setWorkSpaceTab } = useContext(AppContext);
-  const canon = Canon.canons.nrsv;
+
+  const { searchResults, setSearchResults, workSpaceTab, setWorkSpaceTab } = useContext(AppContext);
   const canonjp: { [key: string]: { abbrev: string; name: string } } = canon_jp;
 
   useEffect(() => {
     const options: { label: string; value: string }[][] = [];
-    searchResult.map((search) => {
+    searchResults.map((search) => {
       const bookCounts: Map<string, { [modname: string]: number }> = new Map(); // book: {modname: count}
       const wordRefs = search.wordRefs;
       const modnames = Array.from(wordRefs.keys());
@@ -48,10 +60,10 @@ function AppBar(): JSX.Element {
       options.push(opts);
     });
     setSearchOptions(options);
-  }, [searchResult]);
+  }, [searchResults]);
 
   // useEffect(() => {
-  //   const options = Array.from(searchResult.entries()).map(([book, modCounts]) => {
+  //   const options = Array.from(searchResults.entries()).map(([book, modCounts]) => {
   //     const strs = Object.entries(modCounts).reduce(
   //       (accum, [modname, count]) => accum.concat(`${modname}x${count}`),
   //       [String(canonjp[book]?.abbrev)]
@@ -69,7 +81,30 @@ function AppBar(): JSX.Element {
   //   }, {});
   // }
 
-  const seqs = Array.from({ length: searchResult.length }, (_, i) => i + 1);
+  function bookPositions(wordRefs: Map<string, WordReference>, book: string) {
+    const chapterRefs: Map<number, number[]> = new Map();
+    wordRefs.forEach((wordRef) => {
+      Object.entries(wordRef[book]).forEach(([chap, verseCounts]) => {
+        const chapter = Number(chap);
+        const v1 = chapterRefs.get(chapter) ?? [];
+        const v2 = Object.keys(verseCounts).map((v) => Number(v));
+        const verses = Array.from(new Set([...v1, ...v2])).sort();
+        chapterRefs.set(chapter, verses);
+      });
+    });
+    return chapterRefs;
+  }
+
+  function bookPositionPageSize(
+    wordRefs: Map<string, WordReference>,
+    book: string,
+    pageSize: number
+  ) {
+    const vv = Array.from(bookPositions(wordRefs, book).values());
+    return Math.ceil(vv.reduce((accum, vs) => vs.length + accum, 0) / pageSize);
+  }
+
+  const seqs = Array.from({ length: searchResults.length }, (_, i) => i + 1);
 
   return (
     <Flex px={2}>
@@ -77,16 +112,79 @@ function AppBar(): JSX.Element {
         {workSpaceTab === 0 && <BibleOpener />}
         {workSpaceTab !== 0 && (
           <Box width="280px">
-            {searchOptions.map(
-              (opts, i) =>
+            {searchOptions.map((opts, i) => {
+              const searchResult = searchResults[i];
+              const maxPage = bookPositionPageSize(
+                searchResult.wordRefs,
+                searchResult.selectedBook,
+                SEARCH_ITEM_SIZE
+              );
+              return (
                 i + 1 === workSpaceTab && (
-                  <Select key={i} size="sm" pl="50px">
-                    {opts.map((option) => (
-                      <option value={option.value}>{option.label}</option>
-                    ))}
-                  </Select>
+                  <Flex>
+                    <Box
+                      width="60px"
+                      fontSize="sm"
+                      textAlign="right"
+                      px={2}
+                      py={1}
+                    >{`${searchResult.selectedIndex + 1} / ${maxPage}`}</Box>
+                    <InputGroup cursor="pointer" size="sm" width="200px">
+                      <Select
+                        key={i}
+                        size="sm"
+                        value={searchResult.selectedBook}
+                        onChange={(e) => {
+                          setSearchResults((prev) => {
+                            const results = [...prev];
+                            results[i].selectedBook = e.target.value;
+                            results[i].selectedIndex = 0;
+                            return results;
+                          });
+                        }}
+                      >
+                        {opts.map((option) => (
+                          <option value={option.value}>{option.label}</option>
+                        ))}
+                      </Select>
+                      <Stack direction="column" spacing="0" justifyContent="center">
+                        <InputRightAddon
+                          height="50%"
+                          onClick={() => {
+                            const searchResult = searchResults[i];
+                            const maxPage = bookPositionPageSize(
+                              searchResult.wordRefs,
+                              searchResult.selectedBook,
+                              SEARCH_ITEM_SIZE
+                            );
+                            setSearchResults((prev) => {
+                              const results = [...prev];
+                              if (results[i].selectedIndex + 1 < maxPage)
+                                results[i].selectedIndex += 1;
+                              return results;
+                            });
+                          }}
+                        >
+                          <ChevronUpIcon />
+                        </InputRightAddon>
+                        <InputRightAddon
+                          height="50%"
+                          onClick={() => {
+                            setSearchResults((prev) => {
+                              const results = [...prev];
+                              if (results[i].selectedIndex > 0) results[i].selectedIndex -= 1;
+                              return results;
+                            });
+                          }}
+                        >
+                          <ChevronDownIcon />
+                        </InputRightAddon>
+                      </Stack>
+                    </InputGroup>
+                  </Flex>
                 )
-            )}
+              );
+            })}
           </Box>
         )}
         <Tabs

@@ -3,13 +3,15 @@ import { Box, Tooltip } from '@chakra-ui/react';
 import Sword from '../../utils/Sword';
 import Passage from './Passage';
 import { truncate } from './tools';
+import { ViewOptions } from './Passage';
 
 type Props = {
   sword: Sword;
-  osisRef: string;
+  osisRef: string | string[];
+  viewOptions: ViewOptions;
 };
 
-const SwordView: React.FC<Props> = ({ sword, osisRef }) => {
+const SwordView: React.FC<Props> = ({ sword, osisRef, viewOptions }) => {
   const [rawTexts, setRawTexts] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
@@ -41,8 +43,11 @@ const SwordView: React.FC<Props> = ({ sword, osisRef }) => {
         </Tooltip>
       </Box>
       <Box px={2} pt={1} pb={3} className={String(sword.confs.Lang ?? '')}>
-        {Array.from(rawTexts.entries()).map(([osisRef, rawText], key) => (
-          <Passage key={key} osisRef={osisRef} rawText={rawText} showPosition="verse" />
+        {Array.from(rawTexts.entries()).map(([ref, rawText], key) => (
+          <>
+            <Passage key={key} osisRef={ref} rawText={rawText} viewOptions={viewOptions} />
+            {viewOptions.lineBreak && <br />}
+          </>
         ))}
       </Box>
     </Box>

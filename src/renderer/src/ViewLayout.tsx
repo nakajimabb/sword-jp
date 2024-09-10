@@ -4,13 +4,16 @@ import { Box, Flex } from '@chakra-ui/react';
 import AppContext from './AppContext';
 import SwordView from './SwordView';
 import DictView from './DictView';
+import { ViewOptions } from './Passage';
 
 type Prop = {
   hidden?: boolean;
+  osisRef: string | string[];
+  viewOptions: ViewOptions;
 };
 
-const ViewLayout: React.FC<Prop> = ({ hidden = false }) => {
-  const { swords, layouts, osisRef } = useContext(AppContext);
+const ViewLayout: React.FC<Prop> = ({ osisRef, viewOptions, hidden = false }) => {
+  const { swords, layouts } = useContext(AppContext);
 
   return (
     <Flex h="100%" gap={1} hidden={hidden}>
@@ -24,7 +27,7 @@ const ViewLayout: React.FC<Prop> = ({ hidden = false }) => {
                   if (!sword) return null;
                   return (
                     <Box key={j} flex="1" overflowY="auto">
-                      <SwordView sword={sword} osisRef={osisRef} />
+                      <SwordView sword={sword} osisRef={osisRef} viewOptions={viewOptions} />
                     </Box>
                   );
                 } else if (layout.viewType === 'dictionary') {

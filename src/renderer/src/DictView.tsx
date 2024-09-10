@@ -21,7 +21,7 @@ import Canon from '../../utils/Canon';
 import { WordReference } from '../../utils/Sword';
 
 const DictOpener: React.FC = () => {
-  const { swords, targetWord, setTargetWord, searchResult, setSearchResult, setWorkSpaceTab } =
+  const { swords, targetWord, setTargetWord, searchResults, setSearchResults, setWorkSpaceTab } =
     useAppContext();
   const canon = Canon.canons.nrsv;
 
@@ -53,12 +53,14 @@ const DictOpener: React.FC = () => {
           wordRefs.set(bible.modname, sortedWordRefs);
         }
       });
-      setSearchResult((prev) =>
+      const wordRef = Array.from(wordRefs.values())[0];
+      const selectedBook = Object.keys(wordRef)[0];
+      setSearchResults((prev) =>
         prev
-          .concat({ searchKey: lemma, wordRefs })
+          .concat({ searchKey: lemma, wordRefs, selectedBook, selectedIndex: 0 })
           .slice(prev.length >= maxSearch ? prev.length + 1 - maxSearch : 0)
       );
-      setWorkSpaceTab(searchResult.length + 1 >= maxSearch ? maxSearch : searchResult.length + 1);
+      setWorkSpaceTab(searchResults.length + 1 >= maxSearch ? maxSearch : searchResults.length + 1);
     }
   }
 

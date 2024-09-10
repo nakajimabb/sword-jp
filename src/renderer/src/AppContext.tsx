@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import Sword, { WordReference } from '../../utils/Sword';
 
+export const SEARCH_ITEM_SIZE = 20;
+
 export type Layout = {
   viewType: 'bible' | 'dictionary';
   modname: string;
@@ -25,14 +27,18 @@ export type ContextType = {
   targetWord: TargetWord;
   setTargetWord: React.Dispatch<React.SetStateAction<TargetWord>>;
   dictionaries: Sword[];
-  searchResult: {
+  searchResults: {
     searchKey: string;
+    selectedBook: string;
+    selectedIndex: number;
     wordRefs: Map<string, WordReference>;
   }[];
-  setSearchResult: React.Dispatch<
+  setSearchResults: React.Dispatch<
     React.SetStateAction<
       {
         searchKey: string;
+        selectedBook: string;
+        selectedIndex: number;
         wordRefs: Map<string, WordReference>;
       }[]
     >
@@ -49,10 +55,12 @@ const AppContext = createContext({
   targetWord: {},
   setTargetWord: (_: TargetWord) => {},
   dictionaries: [],
-  searchResult: [],
-  setSearchResult: (
+  searchResults: [],
+  setSearchResults: (
     _: {
       searchKey: string;
+      selectedBook: string;
+      selectedIndex: number;
       wordRefs: Map<string, WordReference>;
     }[]
   ) => {},
@@ -102,9 +110,11 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
   const [osisRef, setOsisRef] = useState('Gen.1');
   const [targetWord, setTargetWord] = useState<TargetWord>({});
   const [dictionaries, setDictionaries] = useState<Sword[]>([]);
-  const [searchResult, setSearchResult] = useState<
+  const [searchResults, setSearchResults] = useState<
     {
       searchKey: string;
+      selectedBook: string;
+      selectedIndex: number;
       wordRefs: Map<string, WordReference>; // modname: WordReference
     }[]
   >([]);
@@ -210,8 +220,8 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
         targetWord,
         setTargetWord,
         dictionaries,
-        searchResult,
-        setSearchResult,
+        searchResults,
+        setSearchResults,
         workSpaceTab,
         setWorkSpaceTab
       }}
