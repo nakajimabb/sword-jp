@@ -2,12 +2,15 @@ import React, { useState, useEffect, useContext } from 'react';
 import {
   Grid,
   GridItem,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
   Modal,
   ModalOverlay,
   ModalContent,
   ModalCloseButton,
   ModalBody,
-  useDisclosure,
   Input,
   InputLeftAddon,
   InputGroup,
@@ -19,7 +22,8 @@ import {
   TabList,
   TabPanels,
   Tab,
-  TabPanel
+  TabPanel,
+  useDisclosure
 } from '@chakra-ui/react';
 import {
   ChevronLeftIcon,
@@ -33,13 +37,86 @@ import Canon from '../../utils/Canon';
 import canon_jp from '../../utils/canons/locale/ja.json';
 import AppContext from './AppContext';
 
+type Props = {
+  mode: 'prev' | 'next';
+  maxList?: number;
+  delay?: number;
+};
+
+const HistoryButton: React.FC<Props> = ({ mode, maxList = 10, delay = 300 }) => {
+  const [clicking, setClicking] = useState(false);
+  const { setOsisRef, targetHistory, setTargetHistory } = useContext(AppContext);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  function slicedHistory() {
+    const index = targetHistory.index;
+    const rindex = targetHistory.osisRefs.length - index;
+    return mode === 'prev'
+      ? [...targetHistory.osisRefs].reverse().slice(rindex, rindex + maxList)
+      : targetHistory.osisRefs.slice(index + 1, index + maxList + 1);
+  }
+
+  return (
+    <Menu isOpen={isOpen} onClose={onClose}>
+      <MenuButton
+        as={IconButton}
+        icon={mode === 'prev' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+        isRound
+        size="sm"
+        fontSize="20px"
+        isDisabled={
+          (mode === 'prev' && targetHistory.index <= 0) ||
+          (mode === 'next' && targetHistory.index >= targetHistory.osisRefs.length - 1)
+        }
+        onMouseDown={() => {
+          setClicking(true);
+          setTimeout(() => onOpen(), delay);
+        }}
+        onMouseUp={() => setClicking(false)}
+        onClick={() => {
+          if (mode === 'prev') {
+            if (targetHistory.index > 0) {
+              const index = targetHistory.index - 1;
+              const osisRef = targetHistory.osisRefs[index];
+              setOsisRef(osisRef);
+              setTargetHistory((prev) => ({ ...prev, index }));
+            }
+          } else {
+            if (targetHistory.index < targetHistory.osisRefs.length - 1) {
+              const index = targetHistory.index + 1;
+              const osisRef = targetHistory.osisRefs[index];
+              setOsisRef(osisRef);
+              setTargetHistory((prev) => ({ ...prev, index }));
+            }
+          }
+        }}
+      />
+      <MenuList hidden={!clicking}>
+        {slicedHistory().map((osisRef, i) => (
+          <MenuItem
+            onClick={() => {
+              setOsisRef(osisRef);
+              setTargetHistory((prev) => ({
+                ...prev,
+                index: mode === 'prev' ? prev.index - i - 1 : prev.index + i + 1
+              }));
+            }}
+          >
+            {osisRef}
+          </MenuItem>
+        ))}
+      </MenuList>
+    </Menu>
+  );
+};
+
 const BibleOpener: React.FC = () => {
   const [tabIndex, setTabIndex] = useState(0);
   const [book, setBook] = useState('Gen');
   const [chapter, setChapter] = useState(1);
 
+  const { osisRef, setOsisRef, setTargetHistory } = useContext(AppContext);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { osisRef, setOsisRef } = useContext(AppContext);
   const canon = Canon.canons.nrsv;
   const canonjp: { [key: string]: { abbrev: string; name: string } } = canon_jp;
 
@@ -55,22 +132,8 @@ const BibleOpener: React.FC = () => {
   return (
     <>
       <Flex gap={2} width="280px">
-        <IconButton
-          size="sm"
-          isRound={true}
-          variant="solid"
-          aria-label="Prev"
-          fontSize="20px"
-          icon={<ChevronLeftIcon />}
-        />
-        <IconButton
-          size="sm"
-          isRound={true}
-          variant="solid"
-          aria-label="Next"
-          fontSize="20px"
-          icon={<ChevronRightIcon />}
-        />
+        <HistoryButton mode="prev" />
+        <HistoryButton mode="next" />
         <InputGroup cursor="pointer" size="sm" width="200px">
           <InputLeftAddon onClick={onOpen}>
             <GiOpenBook size={20} color="#888" />
@@ -80,14 +143,17 @@ const BibleOpener: React.FC = () => {
             <InputRightAddon
               height="50%"
               onClick={() => {
-                setOsisRef((prev) => {
-                  const match = prev.match(/^(.*?)(\d+)$/);
-                  if (match) {
-                    const num = Number(match[2]);
-                    return match[1] + String(num + 1);
-                  }
-                  return prev;
-                });
+                const match = osisRef.match(/^(.*?)(\d+)$/);
+                if (match) {
+                  const num = Number(match[2]);
+                  const ref = match[1] + String(num + 1);
+                  setOsisRef(ref);
+                  setTargetHistory((prev) => {
+                    const history = { ...prev };
+                    history.osisRefs[history.index] = ref;
+                    return history;
+                  });
+                }
               }}
             >
               <ChevronUpIcon />
@@ -95,14 +161,19 @@ const BibleOpener: React.FC = () => {
             <InputRightAddon
               height="50%"
               onClick={() => {
-                setOsisRef((prev) => {
-                  const match = prev.match(/^(.*?)(\d+)$/);
-                  if (match) {
-                    const num = Number(match[2]);
-                    return num > 1 ? match[1] + String(num - 1) : prev;
+                const match = osisRef.match(/^(.*?)(\d+)$/);
+                if (match) {
+                  const num = Number(match[2]);
+                  if (num > 1) {
+                    const ref = match[1] + String(num - 1);
+                    setOsisRef(ref);
+                    setTargetHistory((prev) => {
+                      const history = { ...prev };
+                      history.osisRefs[history.index] = ref;
+                      return history;
+                    });
                   }
-                  return prev;
-                });
+                }
               }}
             >
               <ChevronDownIcon />
@@ -188,7 +259,15 @@ const BibleOpener: React.FC = () => {
                           _hover={{ bg: 'yellow.100', color: 'gray.400' }}
                           onClick={() => {
                             setChapter(number);
-                            setOsisRef(`${book}.${number}`);
+                            const ref = `${book}.${number}`;
+                            setOsisRef(ref);
+                            setTargetHistory((prev) => {
+                              const osisRefs = prev.osisRefs.slice(0, prev.index + 1);
+                              osisRefs.push(ref);
+                              const index = osisRefs.length - 1;
+                              console.log({ osisRefs, index });
+                              return { osisRefs, index };
+                            });
                             onClose();
                           }}
                         >

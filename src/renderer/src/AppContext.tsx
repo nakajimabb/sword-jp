@@ -45,6 +45,8 @@ export type ContextType = {
   >;
   workSpaceTab: number;
   setWorkSpaceTab: React.Dispatch<React.SetStateAction<number>>;
+  targetHistory: { osisRefs: string[]; index: number };
+  setTargetHistory: React.Dispatch<React.SetStateAction<{ osisRefs: string[]; index: number }>>;
 };
 
 const AppContext = createContext({
@@ -65,7 +67,9 @@ const AppContext = createContext({
     }[]
   ) => {},
   workSpaceTab: 0,
-  setWorkSpaceTab: (_: number) => {}
+  setWorkSpaceTab: (_: number) => {},
+  targetHistory: { osisRefs: [], index: -1 },
+  setTargetHistory: (_: { osisRefs: string[]; index: number }) => {}
 } as ContextType);
 
 const LayoutIndexes: number[][][] = [
@@ -119,6 +123,10 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
     }[]
   >([]);
   const [workSpaceTab, setWorkSpaceTab] = useState<number>(0);
+  const [targetHistory, setTargetHistory] = useState<{ osisRefs: string[]; index: number }>({
+    osisRefs: ['Gen.1'],
+    index: 0
+  });
 
   useEffect(() => {
     // メインプロセスからのメッセージを受け取る
@@ -223,7 +231,9 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
         searchResults,
         setSearchResults,
         workSpaceTab,
-        setWorkSpaceTab
+        setWorkSpaceTab,
+        targetHistory,
+        setTargetHistory
       }}
     >
       {children}
