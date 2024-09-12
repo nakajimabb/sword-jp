@@ -5,6 +5,10 @@ import {
   IconButton,
   InputGroup,
   InputRightAddon,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
   Select,
   Stack,
   Tabs,
@@ -12,7 +16,7 @@ import {
   Tab
 } from '@chakra-ui/react';
 import { ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons';
-import { CiSettings } from 'react-icons/ci';
+import { GiHamburgerMenu } from 'react-icons/gi';
 import BibleOpener from './BibleOpener';
 import AppContext, { SEARCH_ITEM_SIZE } from './AppContext';
 import canon_jp from '../../utils/canons/locale/ja.json';
@@ -22,7 +26,8 @@ import { WordReference } from 'src/utils/Sword';
 function AppBar(): JSX.Element {
   const [searchOptions, setSearchOptions] = useState<{ label: string; value: string }[][]>([]);
 
-  const { searchResults, setSearchResults, workSpaceTab, setWorkSpaceTab } = useContext(AppContext);
+  const { searchResults, setSearchResults, workSpaceTab, setWorkSpaceTab, saveSetting } =
+    useContext(AppContext);
   const canonjp: { [key: string]: { abbrev: string; name: string } } = canon_jp;
 
   useEffect(() => {
@@ -210,16 +215,22 @@ function AppBar(): JSX.Element {
           )}
         </Tabs>
       </Flex>
-      <IconButton
-        my={2}
-        ml="auto"
-        size="sm"
-        isRound={true}
-        variant="solid"
-        aria-label="Setting"
-        fontSize="20px"
-        icon={<CiSettings />}
-      />
+      <Menu>
+        <MenuButton
+          isRound
+          my={2}
+          ml="auto"
+          as={IconButton}
+          size="sm"
+          icon={<GiHamburgerMenu />}
+          onClick={() => {}}
+        />
+        <MenuList fontSize="xs">
+          <MenuItem h={6} onClick={saveSetting}>
+            save Setting
+          </MenuItem>
+        </MenuList>
+      </Menu>
     </Flex>
   );
 }

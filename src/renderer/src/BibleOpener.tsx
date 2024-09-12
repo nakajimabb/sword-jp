@@ -91,7 +91,7 @@ const HistoryButton: React.FC<Props> = ({ mode, maxList = 10, delay = 300 }) => 
           }
         }}
       />
-      <MenuList hidden={!clicking}>
+      <MenuList hidden={!clicking} fontSize="sm" minWidth="100px">
         {slicedHistory().map((osisRef, i) => (
           <MenuItem
             onClick={() => {

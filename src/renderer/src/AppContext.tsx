@@ -47,6 +47,12 @@ export type ContextType = {
   setWorkSpaceTab: React.Dispatch<React.SetStateAction<number>>;
   targetHistory: { osisRefs: string[]; index: number };
   setTargetHistory: React.Dispatch<React.SetStateAction<{ osisRefs: string[]; index: number }>>;
+  saveSetting: () => void;
+};
+
+type Settings = {
+  layouts?: Layout[][];
+  targetHistory?: { osisRefs: string[]; index: number };
 };
 
 const AppContext = createContext({
@@ -69,7 +75,8 @@ const AppContext = createContext({
   workSpaceTab: 0,
   setWorkSpaceTab: (_: number) => {},
   targetHistory: { osisRefs: [], index: -1 },
-  setTargetHistory: (_: { osisRefs: string[]; index: number }) => {}
+  setTargetHistory: (_: { osisRefs: string[]; index: number }) => {},
+  saveSetting: () => {}
 } as ContextType);
 
 const LayoutIndexes: number[][][] = [
@@ -130,23 +137,46 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
 
   useEffect(() => {
     // メインプロセスからのメッセージを受け取る
-    window.electron.ipcRenderer.on('load-app', (_, modules: Sword[]) => {
-      const swds: Map<string, Sword> = new Map();
-      modules.forEach((m) =>
-        swds.set(
-          m.modname,
-          new Sword(m.modname, m.modtype, m.confs, m.binary, m.indexes, m.references)
-        )
-      );
-      setSwords(swds);
-      const swdarr = Array.from(swds.values());
-      const bibleNames = swdarr
-        .filter((sword) => sword.modtype === 'bible')
-        .map((sword) => sword.modname);
-      const dicts = swdarr.filter((sword) => sword.modtype === 'dictionary');
-      if (dicts.length > 0) setDictionaries(dicts);
-      setLayouts(makeLayouts(bibleNames, dicts.length > 0));
-    });
+    window.electron.ipcRenderer.on(
+      'load-app',
+      (_, { modules, settings }: { modules: Sword[]; settings: Settings }) => {
+        // load modules
+        const swds: Map<string, Sword> = new Map();
+        modules.forEach((m) =>
+          swds.set(
+            m.modname,
+            new Sword(m.modname, m.modtype, m.confs, m.binary, m.indexes, m.references)
+          )
+        );
+        setSwords(swds);
+        const swdarr = Array.from(swds.values());
+        const dicts = swdarr.filter((sword) => sword.modtype === 'dictionary');
+        if (dicts.length > 0) setDictionaries(dicts);
+        // load settings
+        if (settings.layouts) {
+          setLayouts(settings.layouts);
+        } else {
+          const bibleNames = swdarr
+            .filter((sword) => sword.modtype === 'bible')
+            .map((sword) => sword.modname);
+          console.log({
+            swdarr,
+            bibleNames,
+            dicts,
+            lay: makeLayouts(bibleNames, dicts.length > 0)
+          });
+          setLayouts(makeLayouts(bibleNames, dicts.length > 0));
+        }
+        if (settings.targetHistory) {
+          setTargetHistory(settings.targetHistory);
+          const osisRefs = settings.targetHistory.osisRefs;
+          const index = settings.targetHistory.index;
+          if (index >= 0 && index < osisRefs.length) {
+            setOsisRef(osisRefs[index]);
+          }
+        }
+      }
+    );
     // メインプロセスに準備完了のシグナルを送信
     window.electron.ipcRenderer.send('renderer-ready');
     return () => {
@@ -188,6 +218,32 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
       window.electron.ipcRenderer.removeAllListeners('load-sword-module');
     };
   }, []);
+
+  function slicedHistory() {
+    const MaxHistory = 10;
+    if (targetHistory.index > 0) {
+      if (targetHistory.index > MaxHistory) {
+        return {
+          osisRefs: targetHistory.osisRefs.slice(
+            targetHistory.index - MaxHistory,
+            targetHistory.index + MaxHistory
+          ),
+          index: MaxHistory
+        };
+      } else {
+        return {
+          ...targetHistory,
+          osisRefs: targetHistory.osisRefs.slice(0, targetHistory.index + MaxHistory)
+        };
+      }
+    } else {
+      return targetHistory;
+    }
+  }
+
+  function saveSetting() {
+    window.electron.ipcRenderer.send('save-setting', { layouts, targetHistory: slicedHistory() });
+  }
 
   function makeLayouts(bibleNames: string[], enableDict: boolean) {
     const layoutArr: Layout[] = bibleNames.map((modname) => ({
@@ -233,7 +289,8 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
         workSpaceTab,
         setWorkSpaceTab,
         targetHistory,
-        setTargetHistory
+        setTargetHistory,
+        saveSetting
       }}
     >
       {children}

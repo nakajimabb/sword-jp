@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, Menu, dialog } from 'electron';
 import { join } from 'path';
 import * as fs from 'fs';
+import { promises as fsps } from 'fs';
 import * as path from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
@@ -80,7 +81,24 @@ async function loadSwordModules() {
     })
   );
 
-  mainWindow.webContents.send('load-app', bibles.concat(dicts).concat(morphs));
+  const settings = await readSetting();
+
+  mainWindow.webContents.send('load-app', {
+    modules: bibles.concat(dicts).concat(morphs),
+    settings
+  });
+}
+
+async function readSetting() {
+  try {
+    const currentDirectory = process.cwd();
+    const settingPath = currentDirectory + '/files/settings.json';
+    const data = await fsps.readFile(settingPath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading or parsing file:', error);
+    return {};
+  }
 }
 
 // This method will be called when Electron has finished
@@ -142,6 +160,17 @@ app.whenReady().then(() => {
   // レンダラープロセスが準備完了したらモジュールを読み込む
   ipcMain.on('renderer-ready', () => {
     loadSwordModules();
+  });
+
+  ipcMain.on('save-setting', (_, data) => {
+    const json = JSON.stringify(data, null, 2);
+    const currentDirectory = process.cwd();
+    const settingPath = currentDirectory + '/files/settings.json';
+    fs.writeFile(settingPath, json, (err) => {
+      if (err) {
+        console.error('Error saving data:', err);
+      }
+    });
   });
 
   app.on('activate', function () {
