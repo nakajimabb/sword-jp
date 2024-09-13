@@ -24,10 +24,15 @@ const ViewLayout: React.FC<Prop> = ({ osisRef, viewOptions, hidden = false }) =>
               {rowLayouts.map((layout, j) => {
                 if (layout.viewType === 'bible') {
                   const sword = swords.get(layout.modname);
-                  if (!sword) return null;
                   return (
                     <Box key={j} flex="1" overflowY="auto">
-                      <SwordView sword={sword} osisRef={osisRef} viewOptions={viewOptions} />
+                      <SwordView
+                        sword={sword}
+                        col={i}
+                        row={j}
+                        osisRef={osisRef}
+                        viewOptions={viewOptions}
+                      />
                     </Box>
                   );
                 } else if (layout.viewType === 'dictionary') {

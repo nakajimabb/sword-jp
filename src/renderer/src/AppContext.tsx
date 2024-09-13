@@ -22,6 +22,7 @@ export type TargetWord = {
 export type ContextType = {
   swords: Map<string, Sword>;
   layouts: Layout[][]; // jagged Array
+  setLayouts: React.Dispatch<React.SetStateAction<Layout[][]>>;
   osisRef: string;
   setOsisRef: React.Dispatch<React.SetStateAction<string>>;
   targetWord: TargetWord;
@@ -50,34 +51,28 @@ export type ContextType = {
   saveSetting: () => void;
 };
 
+const AppContext = createContext({
+  swords: new Map(),
+  layouts: [],
+  setLayouts: () => {},
+  osisRef: '',
+  setOsisRef: () => {},
+  targetWord: {},
+  setTargetWord: () => {},
+  dictionaries: [],
+  searchResults: [],
+  setSearchResults: () => {},
+  workSpaceTab: 0,
+  setWorkSpaceTab: () => {},
+  targetHistory: { osisRefs: [], index: -1 },
+  setTargetHistory: () => {},
+  saveSetting: () => {}
+} as ContextType);
+
 type Settings = {
   layouts?: Layout[][];
   targetHistory?: { osisRefs: string[]; index: number };
 };
-
-const AppContext = createContext({
-  swords: new Map(),
-  layouts: [],
-  osisRef: '',
-  setOsisRef: (_: string) => {},
-  targetWord: {},
-  setTargetWord: (_: TargetWord) => {},
-  dictionaries: [],
-  searchResults: [],
-  setSearchResults: (
-    _: {
-      searchKey: string;
-      selectedBook: string;
-      selectedIndex: number;
-      wordRefs: Map<string, WordReference>;
-    }[]
-  ) => {},
-  workSpaceTab: 0,
-  setWorkSpaceTab: (_: number) => {},
-  targetHistory: { osisRefs: [], index: -1 },
-  setTargetHistory: (_: { osisRefs: string[]; index: number }) => {},
-  saveSetting: () => {}
-} as ContextType);
 
 const LayoutIndexes: number[][][] = [
   [[]], // 0
@@ -279,6 +274,7 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
       value={{
         swords,
         layouts,
+        setLayouts,
         osisRef,
         setOsisRef,
         targetWord,
