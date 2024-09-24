@@ -29,6 +29,7 @@
     "@emotion/styled": "^11.13.0",
     "buffer": "^6.0.3",
     "clsx": "^2.1.1",
+    "csv-parser": "^3.0.0",
     "framer-motion": "^11.3.24",
     "iconv-lite": "^0.6.3",
     "jszip": "^3.10.1",

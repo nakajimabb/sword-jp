@@ -3,6 +3,7 @@ import { join } from 'path';
 import * as fs from 'fs';
 import { promises as fsps } from 'fs';
 import * as path from 'path';
+import csv from 'csv-parser';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
 import Sword, { ModType } from '../utils/Sword';
@@ -101,6 +102,89 @@ async function readSetting() {
   }
 }
 
+async function saveJSONFromFiles(dirPath: string, csvPath: string) {
+  const dict: Map<string, object> = new Map();
+  fs.createReadStream(csvPath)
+    .pipe(csv())
+    .on('data', (row) => {
+      if (row.lemma) {
+        dict.set(row.lemma, row);
+      }
+    })
+    .on('end', () => {
+      const json: object = {};
+      fs.readdir(dirPath, (err, files) => {
+        if (err) {
+          return console.error('ディレクトリの読み取りに失敗しました:', err);
+        }
+        // 取得したファイル名をコンソールに出力
+        files.forEach((file) => {
+          const reg = /^([GH])(\d+).txt$/;
+          const m = file.match(reg);
+          if (m) {
+            const path = dirPath + '/' + file;
+            if (fs.existsSync(path)) {
+              const key = m[1] + m[2];
+              const meaning = fs
+                .readFileSync(path, 'utf8')
+                .replace(/->/g, '→')
+                .replace(/&/g, '＆')
+                .replace(/>>/g, '≫')
+                .replace(/</g, '＜')
+                .replace(/>/g, '＞')
+                // .replace(/\)/g, "）")
+                // .replace(/\(/g, "（")
+                .replace(/…/g, '•••');
+              const content = dict.get(key);
+              if (meaning && content) {
+                const spell = 'spell' in content ? String(content.spell) : '';
+                const pronunciation =
+                  'pronunciation' in content
+                    ? String(content.pronunciation).replace(/[()]/g, '')
+                    : '';
+                json[key] = { meaning, spell, pronunciation };
+              } else {
+                console.log(`${key} not found!`);
+              }
+            }
+          }
+        });
+        const dirName = path.basename(dirPath);
+        const jsonPath = path.dirname(dirPath) + '/' + `${dirName}.json`;
+        const jsonString = JSON.stringify(json, null, 2);
+        console.log({ dirName, jsonPath });
+        fs.writeFile(jsonPath, jsonString, (err) => {
+          if (err) {
+            console.error('JSONファイルの保存に失敗しました:', err);
+            return;
+          }
+          console.log('JSONファイルが正常に保存されました');
+        });
+      });
+    });
+}
+
+async function saveJSONModule() {
+  // ディレクトリの指定
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory']
+  });
+  const dirPath = result.filePaths[0];
+  // CSVファイルの指定
+  const result2 = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    title: 'CSVファイルの読み込み',
+    filters: [
+      {
+        name: 'sword module',
+        extensions: ['csv']
+      }
+    ]
+  });
+  const csvPath = result2.filePaths[0];
+  saveJSONFromFiles(dirPath, csvPath);
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -119,6 +203,10 @@ app.whenReady().then(() => {
         {
           label: 'load Dictionary',
           click: () => openFile('dictionary')
+        },
+        {
+          label: 'save JSON module',
+          click: saveJSONModule
         },
         {
           label: '開発ツール',
