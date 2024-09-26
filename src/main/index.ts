@@ -158,7 +158,6 @@ async function saveJSONFromFiles(dirPath: string, csvPath: string) {
         const dirName = path.basename(dirPath);
         const jsonPath = path.dirname(dirPath) + '/' + `${dirName}.json`;
         const jsonString = JSON.stringify({ confs, contents }, null, 2);
-        console.log({ dirName, jsonPath });
         fs.writeFile(jsonPath, jsonString, (err) => {
           if (err) {
             console.error('JSONファイルの保存に失敗しました:', err);
@@ -221,7 +220,6 @@ async function saveJSONFromCsv() {
     base: undefined, // baseプロパティは設定しないことでnameとextが使われる
     ext: '.json'
   });
-  console.log({ confPath, jsonPath });
 
   const str = await fsps.readFile(confPath, 'utf8');
   const confs = JSON.parse(str);

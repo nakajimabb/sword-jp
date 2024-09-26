@@ -186,7 +186,7 @@ const DictView: React.FC = () => {
 
   function swordDesc(modname: string) {
     const sword = getSword(modname);
-    return String(sword?.confs?.Description ?? modname);
+    return String(sword?.confs?.title ?? sword?.confs?.Description ?? modname);
   }
 
   return (

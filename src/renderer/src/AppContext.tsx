@@ -140,7 +140,16 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
         modules.forEach((m) =>
           swds.set(
             m.modname,
-            new Sword(m.modname, m.modtype, m.confs, m.binary, m.indexes, m.references)
+            new Sword(
+              m.modname,
+              m.modtype,
+              m.confs,
+              m.binary,
+              m.indexes,
+              m.format,
+              m.dict,
+              m.references
+            )
           )
         );
         setSwords(swds);
@@ -188,6 +197,8 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
         sword.confs,
         sword.binary,
         sword.indexes,
+        sword.format,
+        sword.dict,
         sword.references
       );
       setSwords((prev) => {

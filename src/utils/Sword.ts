@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import { promises as fsps } from 'fs';
 import * as iconv from 'iconv-lite';
 import { Buffer } from 'buffer';
 import JSZip from 'jszip';
@@ -47,12 +48,38 @@ export type BookReference = {
   [lemma: string]: WordReference;
 };
 
+type JsonModule = {
+  confs: JsonConfs;
+  contents: JsonContents;
+};
+
+type JsonConfs = {
+  modname: string;
+  title: string;
+  title_en?: string;
+  author?: string;
+  editor?: string;
+  publisher?: string;
+};
+
+type DictItem = {
+  spell: string;
+  meaning: string;
+  pronunciation?: string;
+};
+
+type JsonContents = {
+  [key: string]: DictItem;
+};
+
 class Sword {
   modname: string;
   modtype: ModType;
   confs: { [key: string]: string | string[] };
   binary: BookU8Arr;
   indexes: IndexesType;
+  format: 'sword' | 'json';
+  dict?: Map<string, { [key: string]: string }>;
   references?: BookReference;
 
   constructor(
@@ -61,6 +88,8 @@ class Sword {
     confs: { [key: string]: string | string[] },
     binary: BookU8Arr,
     indexes: IndexesType,
+    format: 'sword' | 'json',
+    dict?: Map<string, { [key: string]: string }>,
     references?: {
       [lemma: string]: { [book: string]: { [chapter: number]: { [verse: number]: number } } };
     }
@@ -70,6 +99,8 @@ class Sword {
     this.confs = confs;
     this.binary = binary;
     this.indexes = indexes;
+    this.format = format;
+    this.dict = dict;
     this.references = references;
   }
 
@@ -114,14 +145,21 @@ class Sword {
     const refs = typeof osisRef === 'string' ? [osisRef] : osisRef;
     const rawTexts: Map<string, string> = new Map();
     refs.forEach((ref) => {
-      if (this.binary.dict && this.indexes.dict) {
-        const indexes = this.indexes.dict;
-        if (indexes && ref in indexes) {
-          const encoding = String(this.confs.Encoding) ?? 'CP1252';
-          const index = indexes[ref];
-          const data = this.binary.dict.slice(index.start, index.start + index.length);
-          const rawText = decodeTextFromUint8Array(data, encoding);
-          rawTexts.set(ref, rawText);
+      if (this.format === 'sword') {
+        if (this.binary.dict && this.indexes.dict) {
+          const indexes = this.indexes.dict;
+          if (indexes && ref in indexes) {
+            const encoding = String(this.confs.Encoding) ?? 'CP1252';
+            const index = indexes[ref];
+            const data = this.binary.dict.slice(index.start, index.start + index.length);
+            const rawText = decodeTextFromUint8Array(data, encoding);
+            rawTexts.set(ref, rawText);
+          }
+        }
+      } else if (this.format === 'json') {
+        const item = this.dict?.get(ref);
+        if (item) {
+          rawTexts.set(ref, item.meaning);
         }
       }
     });
@@ -437,7 +475,32 @@ class Sword {
     return bookPositions;
   }
 
+  private static isJsonPath(path: string) {
+    return /\.(json\.zip|json)$/.test(path);
+  }
+
+  private static async newSwordFromJson(path: string, modtype: ModType) {
+    const buffer = fs.readFileSync(path);
+    const zip = await JSZip.loadAsync(buffer);
+    for (const name in zip.files) {
+      const text = await zip.files[name].async('text');
+      const json: JsonModule = JSON.parse(text);
+      const confs = json.confs;
+      const modname = confs.modname;
+      const dict: Map<string, { [key: string]: string }> = new Map();
+      Object.entries(json.contents).forEach(([key, item]) => {
+        dict.set(key, item);
+      });
+      return new Sword(modname, modtype, confs, {}, {}, 'json', dict);
+    }
+    throw Error('not found JSON File.');
+  }
+
   public static async loadFile(path: string, modtype: ModType) {
+    if (Sword.isJsonPath(path)) {
+      return Sword.newSwordFromJson(path, modtype);
+    }
+
     const buffer = fs.readFileSync(path);
     const zip = await JSZip.loadAsync(buffer);
     const confName = Object.keys(zip.files).find((name) => name.search(/.conf/) !== -1);
@@ -494,11 +557,11 @@ class Sword {
     const vers = String(confs.Versification ?? 'kjv').toLowerCase();
     if (modtype === 'bible') {
       const indexes = await Sword.createBibleIndexes(u8arrIndexes, moddrv, vers);
-      return new Sword(modname, modtype, confs, u8arrBooks, indexes);
+      return new Sword(modname, modtype, confs, u8arrBooks, indexes, 'sword');
     } else if (u8arrIndexes.dict && u8arrBooks.dict) {
       const encoding = (confs.Encoding ?? 'UTF-8') as string;
       const indexes = Sword.createDictIndexes(u8arrIndexes.dict, u8arrBooks.dict, encoding);
-      return new Sword(modname, modtype, confs, u8arrBooks, indexes);
+      return new Sword(modname, modtype, confs, u8arrBooks, indexes, 'sword');
     }
     throw Error('fail to load sword module');
   }
