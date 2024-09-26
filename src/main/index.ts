@@ -103,6 +103,12 @@ async function readSetting() {
 }
 
 async function saveJSONFromFiles(dirPath: string, csvPath: string) {
+  const confPath = dirPath + '/' + 'index.json';
+  if (!fs.existsSync(confPath)) return;
+
+  const str = await fsps.readFile(confPath, 'utf8');
+  const confs = JSON.parse(str);
+
   const dict: Map<string, object> = new Map();
   fs.createReadStream(csvPath)
     .pipe(csv())
@@ -112,7 +118,7 @@ async function saveJSONFromFiles(dirPath: string, csvPath: string) {
       }
     })
     .on('end', () => {
-      const json: object = {};
+      const contents: object = {};
       fs.readdir(dirPath, (err, files) => {
         if (err) {
           return console.error('ディレクトリの読み取りに失敗しました:', err);
@@ -142,7 +148,7 @@ async function saveJSONFromFiles(dirPath: string, csvPath: string) {
                   'pronunciation' in content
                     ? String(content.pronunciation).replace(/[()]/g, '')
                     : '';
-                json[key] = { meaning, spell, pronunciation };
+                contents[key] = { meaning, spell, pronunciation };
               } else {
                 console.log(`${key} not found!`);
               }
@@ -151,7 +157,7 @@ async function saveJSONFromFiles(dirPath: string, csvPath: string) {
         });
         const dirName = path.basename(dirPath);
         const jsonPath = path.dirname(dirPath) + '/' + `${dirName}.json`;
-        const jsonString = JSON.stringify(json, null, 2);
+        const jsonString = JSON.stringify({ confs, contents }, null, 2);
         console.log({ dirName, jsonPath });
         fs.writeFile(jsonPath, jsonString, (err) => {
           if (err) {
@@ -164,7 +170,7 @@ async function saveJSONFromFiles(dirPath: string, csvPath: string) {
     });
 }
 
-async function saveJSONModule() {
+async function saveJSONFromDir() {
   // ディレクトリの指定
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory']
@@ -183,6 +189,70 @@ async function saveJSONModule() {
   });
   const csvPath = result2.filePaths[0];
   saveJSONFromFiles(dirPath, csvPath);
+}
+
+async function saveJSONFromCsv() {
+  // CSVファイルの指定
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    title: 'CSVファイルの読み込み',
+    filters: [
+      {
+        name: 'sword module',
+        extensions: ['csv']
+      }
+    ]
+  });
+  // 設定ファイル(JSON)の指定
+  const result2 = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    title: '設定ファイル(JSON)の読み込み',
+    filters: [
+      {
+        name: 'sword module',
+        extensions: ['json']
+      }
+    ]
+  });
+  const csvPath = result.filePaths[0];
+  const confPath = result2.filePaths[0];
+  const jsonPath = path.format({
+    ...path.parse(csvPath),
+    base: undefined, // baseプロパティは設定しないことでnameとextが使われる
+    ext: '.json'
+  });
+  console.log({ confPath, jsonPath });
+
+  const str = await fsps.readFile(confPath, 'utf8');
+  const confs = JSON.parse(str);
+
+  const dict: Map<string, object> = new Map();
+  fs.createReadStream(csvPath)
+    .pipe(csv())
+    .on('data', (row) => {
+      if (row.lemma) {
+        dict.set(row.lemma, row);
+      }
+    })
+    .on('end', () => {
+      const contents: object = {};
+      dict.forEach((content, key) => {
+        const meaning = 'meaning' in content ? String(content.meaning) : '';
+        const spell = 'spell' in content ? String(content.spell) : '';
+        const pronunciation =
+          'pronunciation' in content ? String(content.pronunciation).replace(/[()]/g, '') : '';
+        contents[key] = { meaning, spell, pronunciation };
+      });
+
+      const jsonString = JSON.stringify({ confs, contents }, null, 2);
+      fs.writeFile(jsonPath, jsonString, (err) => {
+        if (err) {
+          console.error('JSONファイルの保存に失敗しました:', err);
+          return;
+        }
+        console.log('JSONファイルが正常に保存されました');
+      });
+    });
 }
 
 // This method will be called when Electron has finished
@@ -205,8 +275,12 @@ app.whenReady().then(() => {
           click: () => openFile('dictionary')
         },
         {
-          label: 'save JSON module',
-          click: saveJSONModule
+          label: 'save JSON from directory',
+          click: saveJSONFromDir
+        },
+        {
+          label: 'save JSON from csv',
+          click: saveJSONFromCsv
         },
         {
           label: '開発ツール',
