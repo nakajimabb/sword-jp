@@ -150,25 +150,29 @@ const DictView: React.FC = () => {
 
   useEffect(() => {
     (async () => {
-      const morphs = getMorphologies();
-      const morphTxts = morphs
-        .map((morph) => {
-          if (targetWord.morph)
-            return Array.from(morph.renderText(targetWord.morph).values()) ?? [];
-          else return [];
-        })
-        .flat()
-        .filter((str) => !!str);
-      setMorphTexts(morphTxts);
-      const texts: Map<string, string[]> = new Map();
-      const dicts = getDictionaries();
-      dicts.forEach((dict) => {
-        if (targetWord.lemma) {
-          const txts = dict.renderText(targetWord.lemma);
-          if (txts.size > 0) texts.set(dict.modname, Array.from(txts.values()));
-        }
-      });
-      setRawTexts(texts);
+      try {
+        const morphs = getMorphologies();
+        const morphTxts = morphs
+          .map((morph) => {
+            if (targetWord.morph)
+              return Array.from(morph.renderText(targetWord.morph).values()) ?? [];
+            else return [];
+          })
+          .flat()
+          .filter((str) => !!str);
+        setMorphTexts(morphTxts);
+        const texts: Map<string, string[]> = new Map();
+        const dicts = getDictionaries();
+        dicts.forEach((dict) => {
+          if (targetWord.lemma) {
+            const txts = dict.renderText(targetWord.lemma);
+            if (txts.size > 0) texts.set(dict.modname, Array.from(txts.values()));
+          }
+        });
+        setRawTexts(texts);
+      } catch (e) {
+        setRawTexts(new Map());
+      }
     })();
   }, [targetWord, swords]);
 
@@ -190,55 +194,57 @@ const DictView: React.FC = () => {
   }
 
   return (
-    <Box border="1px" borderColor="gray.100">
-      <Box
-        px="0.5rem"
-        fontSize="sm"
-        letterSpacing="wide"
-        boxShadow="lg"
-        color="gray.600"
-        bg="yellow.200"
-        h="1.25rem"
-      >
-        Dictionary
-      </Box>
-      <Box p={2}>
-        <DictOpener />
-        <Box fontSize="larger">
-          {targetWord.text && (
-            <span className={hebrewOrGreek(targetWord.text)}>{targetWord.text}</span>
-          )}
+    <Box flex="1" overflowY="auto">
+      <Box border="1px" borderColor="gray.100">
+        <Box
+          px="0.5rem"
+          fontSize="sm"
+          letterSpacing="wide"
+          boxShadow="lg"
+          color="gray.600"
+          bg="yellow.200"
+          h="1.25rem"
+        >
+          Dictionary
         </Box>
-        <Flex>
-          <Box whiteSpace="pre-line" fontSize="smaller">
-            {morphTexts.map((text) => (
-              <>
-                <Text as="span" color="gray.500" fontSize="smaller">
-                  {targetWord.morph}
-                </Text>
-                &nbsp;
-                <DictPassage rawText={text} />
-              </>
-            ))}
+        <Box p={2}>
+          <DictOpener />
+          <Box fontSize="larger">
+            {targetWord.text && (
+              <span className={hebrewOrGreek(targetWord.text)}>{targetWord.text}</span>
+            )}
           </Box>
-        </Flex>
-      </Box>
-      <hr />
-      <Box p={2}>
-        {Array.from(rawTexts.entries()).map(([modname, texts]) => {
-          return (
-            <>
-              <Badge variant="outline" colorScheme="green">
-                {swordDesc(modname)}
-              </Badge>
-              <Box fontSize="small" whiteSpace="pre-line">
-                {texts.map((rawText) => (
-                  <DictPassage rawText={rawText} />
-                ))}
-              </Box>
-            </>
-          );
-        })}
+          <Flex>
+            <Box whiteSpace="pre-line" fontSize="smaller">
+              {morphTexts.map((text) => (
+                <>
+                  <Text as="span" color="gray.500" fontSize="smaller">
+                    {targetWord.morph}
+                  </Text>
+                  &nbsp;
+                  <DictPassage rawText={text} />
+                </>
+              ))}
+            </Box>
+          </Flex>
+        </Box>
+        <hr />
+        <Box p={2}>
+          {Array.from(rawTexts.entries()).map(([modname, texts]) => {
+            return (
+              <>
+                <Badge variant="outline" colorScheme="green">
+                  {swordDesc(modname)}
+                </Badge>
+                <Box fontSize="small" whiteSpace="pre-line">
+                  {texts.map((rawText) => (
+                    <DictPassage rawText={rawText} />
+                  ))}
+                </Box>
+              </>
+            );
+          })}
+        </Box>
       </Box>
     </Box>
   );

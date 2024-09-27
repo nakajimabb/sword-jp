@@ -25,22 +25,17 @@ const ViewLayout: React.FC<Prop> = ({ osisRef, viewOptions, hidden = false }) =>
                 if (layout.viewType === 'bible') {
                   const sword = swords.get(layout.modname);
                   return (
-                    <Box key={j} flex="1" overflowY="auto">
-                      <SwordView
-                        sword={sword}
-                        col={i}
-                        row={j}
-                        osisRef={osisRef}
-                        viewOptions={viewOptions}
-                      />
-                    </Box>
+                    <SwordView
+                      key={j}
+                      sword={sword}
+                      col={i}
+                      row={j}
+                      osisRef={osisRef}
+                      viewOptions={viewOptions}
+                    />
                   );
                 } else if (layout.viewType === 'dictionary') {
-                  return (
-                    <Box key={j} flex="1" overflowY="auto">
-                      <DictView />
-                    </Box>
-                  );
+                  return <DictView key={j} />;
                 } else {
                   return null;
                 }

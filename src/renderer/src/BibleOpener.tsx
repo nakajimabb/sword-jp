@@ -127,7 +127,7 @@ const BibleOpener: React.FC = () => {
   }, []);
 
   const maxChapter =
-    (canon.ot && canon.ot[book].maxChapter) ?? (canon.nt && canon.nt[book].maxChapter) ?? 1;
+    (canon.ot && canon.ot[book]?.maxChapter) ?? (canon.nt && canon.nt[book]?.maxChapter) ?? 1;
 
   return (
     <>
