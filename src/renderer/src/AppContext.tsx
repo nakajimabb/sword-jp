@@ -134,7 +134,15 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
     // メインプロセスからのメッセージを受け取る
     window.electron.ipcRenderer.on(
       'load-app',
-      (_, { modules, settings }: { modules: Sword[]; settings: Settings }) => {
+      (
+        _,
+        {
+          modules,
+          settings,
+          resourcePath
+        }: { modules: Sword[]; settings: Settings; resourcePath: string }
+      ) => {
+        console.log({ resourcePath });
         // load modules
         const swds: Map<string, Sword> = new Map();
         modules.forEach((m) =>

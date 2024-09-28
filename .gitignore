@@ -1,6 +1,6 @@
 node_modules
 dist
 out
-files
+assets
 .DS_Store
 *.log*

@@ -53,24 +53,28 @@ function zipFilePaths(dirPath: string) {
     );
 }
 
+function getResourcePath(relativePath) {
+  return path.join(app.isPackaged ? process.resourcesPath : process.cwd(), relativePath);
+}
+
 async function loadSwordModules() {
-  const currentDirectory = process.cwd();
-  const bibleDir = currentDirectory + '/files/BibleTexts';
+  const resourcePath = getResourcePath('assets');
+  const bibleDir = resourcePath + '/BibleTexts';
   const biblePaths = zipFilePaths(bibleDir);
   const bibles = await Promise.all(
     biblePaths.map(async (filePath) => await Sword.loadFile(filePath, 'bible'))
   );
-  const dictDir = currentDirectory + '/files/Dictionaries';
+  const dictDir = resourcePath + '/Dictionaries';
   const dictPaths = zipFilePaths(dictDir);
   const dicts = await Promise.all(
     dictPaths.map(async (filePath) => await Sword.loadFile(filePath, 'dictionary'))
   );
-  const morphDir = currentDirectory + '/files/Morphologies';
+  const morphDir = resourcePath + '/Morphologies';
   const morphPaths = zipFilePaths(morphDir);
   const morphs = await Promise.all(
     morphPaths.map(async (filePath) => await Sword.loadFile(filePath, 'morphology'))
   );
-  const referenceDir = currentDirectory + '/files/References';
+  const referenceDir = resourcePath + '/References';
   await Promise.all(
     Array.from(bibles.values()).map(async (bible) => {
       const path = referenceDir + '/' + `${bible.modname}.json.zip`;
@@ -86,14 +90,15 @@ async function loadSwordModules() {
 
   mainWindow.webContents.send('load-app', {
     modules: bibles.concat(dicts).concat(morphs),
-    settings
+    settings,
+    resourcePath
   });
 }
 
 async function readSetting() {
   try {
-    const currentDirectory = process.cwd();
-    const settingPath = currentDirectory + '/files/settings.json';
+    const resourcePath = getResourcePath('assets');
+    const settingPath = resourcePath + '/settings.json';
     const data = await fsps.readFile(settingPath, 'utf8');
     return JSON.parse(data);
   } catch (error) {
@@ -324,8 +329,8 @@ app.whenReady().then(() => {
 
   ipcMain.on('save-setting', (_, data) => {
     const json = JSON.stringify(data, null, 2);
-    const currentDirectory = process.cwd();
-    const settingPath = currentDirectory + '/files/settings.json';
+    const resourcePath = process.cwd();
+    const settingPath = resourcePath + '/settings.json';
     fs.writeFile(settingPath, json, (err) => {
       if (err) {
         console.error('Error saving data:', err);

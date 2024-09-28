@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import { promises as fsps } from 'fs';
 import * as iconv from 'iconv-lite';
 import { Buffer } from 'buffer';
 import JSZip from 'jszip';

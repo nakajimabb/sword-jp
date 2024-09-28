@@ -1,15 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import {
-  Box,
-  Flex,
-  Icon,
-  IconButton,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  Tooltip
-} from '@chakra-ui/react';
+import { Box, Flex, Menu, MenuButton, MenuList, MenuItem, Tooltip } from '@chakra-ui/react';
 import { SmallCloseIcon } from '@chakra-ui/icons';
 import { GiHamburgerMenu } from 'react-icons/gi';
 import {
