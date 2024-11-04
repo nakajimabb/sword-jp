@@ -329,7 +329,7 @@ app.whenReady().then(() => {
 
   ipcMain.on('save-setting', (_, data) => {
     const json = JSON.stringify(data, null, 2);
-    const resourcePath = process.cwd();
+    const resourcePath = getResourcePath('assets');
     const settingPath = resourcePath + '/settings.json';
     fs.writeFile(settingPath, json, (err) => {
       if (err) {
