@@ -45,7 +45,7 @@ type Props = {
 
 const HistoryButton: React.FC<Props> = ({ mode, maxList = 10, delay = 300 }) => {
   const [clicking, setClicking] = useState(false);
-  const { setOsisRef, targetHistory, setTargetHistory } = useContext(AppContext);
+  const { setOsisRef, targetHistory, changeTargetHistory } = useContext(AppContext);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   function slicedHistory() {
@@ -79,14 +79,14 @@ const HistoryButton: React.FC<Props> = ({ mode, maxList = 10, delay = 300 }) => 
               const index = targetHistory.index - 1;
               const osisRef = targetHistory.osisRefs[index];
               setOsisRef(osisRef);
-              setTargetHistory((prev) => ({ ...prev, index }));
+              changeTargetHistory({ ...targetHistory, index });
             }
           } else {
             if (targetHistory.index < targetHistory.osisRefs.length - 1) {
               const index = targetHistory.index + 1;
               const osisRef = targetHistory.osisRefs[index];
               setOsisRef(osisRef);
-              setTargetHistory((prev) => ({ ...prev, index }));
+              changeTargetHistory({ ...targetHistory, index });
             }
           }
         }}
@@ -94,12 +94,14 @@ const HistoryButton: React.FC<Props> = ({ mode, maxList = 10, delay = 300 }) => 
       <MenuList hidden={!clicking} fontSize="sm" minWidth="100px">
         {slicedHistory().map((osisRef, i) => (
           <MenuItem
+            key={i}
             onClick={() => {
               setOsisRef(osisRef);
-              setTargetHistory((prev) => ({
-                ...prev,
-                index: mode === 'prev' ? prev.index - i - 1 : prev.index + i + 1
-              }));
+              const history = {
+                ...targetHistory,
+                index: mode === 'prev' ? targetHistory.index - i - 1 : targetHistory.index + i + 1
+              };
+              changeTargetHistory(history);
             }}
           >
             {osisRef}
@@ -115,7 +117,7 @@ const BibleOpener: React.FC = () => {
   const [book, setBook] = useState('Gen');
   const [chapter, setChapter] = useState(1);
 
-  const { osisRef, setOsisRef, setTargetHistory } = useContext(AppContext);
+  const { osisRef, setOsisRef, targetHistory, changeTargetHistory } = useContext(AppContext);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const canon = Canon.canons.nrsv;
   const canonjp: { [key: string]: { abbrev: string; name: string } } = canon_jp;
@@ -148,11 +150,9 @@ const BibleOpener: React.FC = () => {
                   const num = Number(match[2]);
                   const ref = match[1] + String(num + 1);
                   setOsisRef(ref);
-                  setTargetHistory((prev) => {
-                    const history = { ...prev };
-                    history.osisRefs[history.index] = ref;
-                    return history;
-                  });
+                  const history = { ...targetHistory };
+                  history.osisRefs[history.index] = ref;
+                  changeTargetHistory(history);
                 }
               }}
             >
@@ -167,11 +167,9 @@ const BibleOpener: React.FC = () => {
                   if (num > 1) {
                     const ref = match[1] + String(num - 1);
                     setOsisRef(ref);
-                    setTargetHistory((prev) => {
-                      const history = { ...prev };
-                      history.osisRefs[history.index] = ref;
-                      return history;
-                    });
+                    const history = { ...targetHistory };
+                    history.osisRefs[history.index] = ref;
+                    changeTargetHistory(history);
                   }
                 }
               }}
@@ -202,8 +200,9 @@ const BibleOpener: React.FC = () => {
                     borderColor="gray.400"
                   >
                     {canon.ot &&
-                      Object.keys(canon.ot).map((abbrev) => (
+                      Object.keys(canon.ot).map((abbrev, i) => (
                         <GridItem
+                          key={i}
                           w="100%"
                           h="10"
                           bg={book === abbrev ? 'blue.200' : 'blue.100'}
@@ -221,8 +220,9 @@ const BibleOpener: React.FC = () => {
                         </GridItem>
                       ))}
                     {canon.nt &&
-                      Object.keys(canon.nt).map((abbrev) => (
+                      Object.keys(canon.nt).map((abbrev, i) => (
                         <GridItem
+                          key={i}
                           w="100%"
                           h="10"
                           bg={book === abbrev ? 'green.200' : 'green.100'}
@@ -243,9 +243,10 @@ const BibleOpener: React.FC = () => {
                 </TabPanel>
                 <TabPanel>
                   <Grid templateColumns="repeat(10, 1fr)" gap={0}>
-                    {Array.from({ length: maxChapter }, (_, i) => i + 1).map((number) => {
+                    {Array.from({ length: maxChapter }, (_, i) => i + 1).map((number, i) => {
                       return (
                         <GridItem
+                          key={i}
                           w="100%"
                           h="8"
                           bg={chapter === number ? 'yellow.300' : 'yellow.100'}
@@ -261,13 +262,13 @@ const BibleOpener: React.FC = () => {
                             setChapter(number);
                             const ref = `${book}.${number}`;
                             setOsisRef(ref);
-                            setTargetHistory((prev) => {
-                              const osisRefs = prev.osisRefs.slice(0, prev.index + 1);
-                              osisRefs.push(ref);
-                              const index = osisRefs.length - 1;
-                              console.log({ osisRefs, index });
-                              return { osisRefs, index };
-                            });
+                            const osisRefs = targetHistory.osisRefs.slice(
+                              0,
+                              targetHistory.index + 1
+                            );
+                            osisRefs.push(ref);
+                            const index = osisRefs.length - 1;
+                            changeTargetHistory({ osisRefs, index });
                             onClose();
                           }}
                         >

@@ -1,9 +1,14 @@
-import React, { useState, useEffect, useContext, createContext } from 'react';
+import React, { useState, useEffect, useContext, createContext, useRef } from 'react';
 import Sword, { WordReference } from '../../utils/Sword';
 
 export const SEARCH_ITEM_SIZE = 20;
 
-export type Layout = {
+export type Setting = {
+  viewLayouts: ViewLayout[][];
+  targetHistory: { osisRefs: string[]; index: number };
+};
+
+export type ViewLayout = {
   viewType: 'bible' | 'dictionary';
   modname: string;
   textSize: number; // text size percentage
@@ -21,8 +26,8 @@ export type TargetWord = {
 
 export type ContextType = {
   swords: Map<string, Sword>;
-  layouts: Layout[][]; // jagged Array
-  setLayouts: React.Dispatch<React.SetStateAction<Layout[][]>>;
+  viewLayouts: ViewLayout[][]; // jagged Array
+  changeViewLayouts: (layouts: ViewLayout[][]) => void;
   osisRef: string;
   setOsisRef: React.Dispatch<React.SetStateAction<string>>;
   targetWord: TargetWord;
@@ -47,14 +52,13 @@ export type ContextType = {
   workSpaceTab: number;
   setWorkSpaceTab: React.Dispatch<React.SetStateAction<number>>;
   targetHistory: { osisRefs: string[]; index: number };
-  setTargetHistory: React.Dispatch<React.SetStateAction<{ osisRefs: string[]; index: number }>>;
-  saveSetting: () => void;
+  changeTargetHistory: (history: { osisRefs: string[]; index: number }) => void;
 };
 
 const AppContext = createContext({
   swords: new Map(),
-  layouts: [],
-  setLayouts: () => {},
+  viewLayouts: [],
+  changeViewLayouts: () => {},
   osisRef: '',
   setOsisRef: () => {},
   targetWord: {},
@@ -65,16 +69,15 @@ const AppContext = createContext({
   workSpaceTab: 0,
   setWorkSpaceTab: () => {},
   targetHistory: { osisRefs: [], index: -1 },
-  setTargetHistory: () => {},
-  saveSetting: () => {}
+  changeTargetHistory: () => {}
 } as ContextType);
 
 type Settings = {
-  layouts?: Layout[][];
+  viewLayouts?: ViewLayout[][];
   targetHistory?: { osisRefs: string[]; index: number };
 };
 
-const LayoutIndexes: number[][][] = [
+const ViewLayoutIndexes: number[][][] = [
   [[]], // 0
   [[0]], // 1
   [[0], [1]], // 2
@@ -112,7 +115,7 @@ type Props = {
 
 export const AppContextProvider: React.FC<Props> = ({ children }) => {
   const [swords, setSwords] = useState<Map<string, Sword>>(new Map());
-  const [layouts, setLayouts] = useState<Layout[][]>([]);
+  const [viewLayouts, setViewLayouts] = useState<ViewLayout[][]>([]);
   const [osisRef, setOsisRef] = useState('Gen.1');
   const [targetWord, setTargetWord] = useState<TargetWord>({});
   const [dictionaries, setDictionaries] = useState<Sword[]>([]);
@@ -134,15 +137,7 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
     // メインプロセスからのメッセージを受け取る
     window.electron.ipcRenderer.on(
       'load-app',
-      (
-        _,
-        {
-          modules,
-          settings,
-          resourcePath
-        }: { modules: Sword[]; settings: Settings; resourcePath: string }
-      ) => {
-        console.log({ resourcePath });
+      (_, { modules, settings }: { modules: Sword[]; settings: Settings }) => {
         // load modules
         const swds: Map<string, Sword> = new Map();
         modules.forEach((m) =>
@@ -165,8 +160,8 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
         const dicts = swdarr.filter((sword) => sword.modtype === 'dictionary');
         if (dicts.length > 0) setDictionaries(dicts);
         // load settings
-        if (settings.layouts) {
-          setLayouts(settings.layouts);
+        if (settings.viewLayouts) {
+          setViewLayouts(settings.viewLayouts);
         } else {
           const bibleNames = swdarr
             .filter((sword) => sword.modtype === 'bible')
@@ -175,9 +170,9 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
             swdarr,
             bibleNames,
             dicts,
-            lay: makeLayouts(bibleNames, dicts.length > 0)
+            lay: makeViewLayouts(bibleNames, dicts.length > 0)
           });
-          setLayouts(makeLayouts(bibleNames, dicts.length > 0));
+          setViewLayouts(makeViewLayouts(bibleNames, dicts.length > 0));
         }
         if (settings.targetHistory) {
           setTargetHistory(settings.targetHistory);
@@ -215,14 +210,14 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
         return swds;
       });
       if (clone.modtype === 'bible') {
-        setLayouts((prev) => {
+        setViewLayouts((prev) => {
           const lays = prev.flat();
           const bibleNames = lays
             .filter((lay) => lay.viewType === 'bible')
             .map((lay) => lay.modname);
           bibleNames.push(clone.modname);
           const enableDict = lays.some((lay) => lay.viewType === 'dictionary');
-          return makeLayouts(bibleNames, enableDict);
+          return makeViewLayouts(bibleNames, enableDict);
         });
       } else if (clone.modtype === 'dictionary') {
         setDictionaries((prev) => prev.concat(clone));
@@ -233,34 +228,44 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
     };
   }, []);
 
-  function slicedHistory() {
+  function slicedHistory(history: { osisRefs: string[]; index: number }) {
     const MaxHistory = 10;
-    if (targetHistory.index > 0) {
-      if (targetHistory.index > MaxHistory) {
+    if (history.index > 0) {
+      if (history.index > MaxHistory) {
         return {
-          osisRefs: targetHistory.osisRefs.slice(
-            targetHistory.index - MaxHistory,
-            targetHistory.index + MaxHistory
-          ),
+          osisRefs: history.osisRefs.slice(history.index - MaxHistory, history.index + MaxHistory),
           index: MaxHistory
         };
       } else {
         return {
-          ...targetHistory,
-          osisRefs: targetHistory.osisRefs.slice(0, targetHistory.index + MaxHistory)
+          ...history,
+          osisRefs: history.osisRefs.slice(0, history.index + MaxHistory)
         };
       }
     } else {
-      return targetHistory;
+      return history;
     }
   }
 
-  function saveSetting() {
-    window.electron.ipcRenderer.send('save-setting', { layouts, targetHistory: slicedHistory() });
+  function changeViewLayouts(layouts: ViewLayout[][]) {
+    setViewLayouts(layouts);
+    saveSetting({ viewLayouts: layouts, targetHistory });
   }
 
-  function makeLayouts(bibleNames: string[], enableDict: boolean) {
-    const layoutArr: Layout[] = bibleNames.map((modname) => ({
+  function changeTargetHistory(history: { osisRefs: string[]; index: number }) {
+    setTargetHistory(slicedHistory(history));
+    saveSetting({ viewLayouts, targetHistory: history });
+  }
+
+  function saveSetting(setting: {
+    viewLayouts: ViewLayout[][];
+    targetHistory: { osisRefs: string[]; index: number };
+  }) {
+    window.electron.ipcRenderer.send('save-setting', setting);
+  }
+
+  function makeViewLayouts(bibleNames: string[], enableDict: boolean) {
+    const layoutArr: ViewLayout[] = bibleNames.map((modname) => ({
       viewType: 'bible',
       modname,
       textSize: 100,
@@ -278,22 +283,22 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
         disabled: false
       });
     }
-    const indexes: number[][] = LayoutIndexes[layoutArr.length];
-    const newLayouts: Layout[][] = [];
+    const indexes: number[][] = ViewLayoutIndexes[layoutArr.length];
+    const layouts: ViewLayout[][] = [];
     indexes.forEach((idxes) => {
-      const arr: Layout[] = [];
+      const arr: ViewLayout[] = [];
       idxes.forEach((i) => arr.push(layoutArr[i]));
-      newLayouts.push(arr);
+      layouts.push(arr);
     });
-    return newLayouts;
+    return layouts;
   }
 
   return (
     <AppContext.Provider
       value={{
         swords,
-        layouts,
-        setLayouts,
+        viewLayouts,
+        changeViewLayouts,
         osisRef,
         setOsisRef,
         targetWord,
@@ -304,8 +309,7 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
         workSpaceTab,
         setWorkSpaceTab,
         targetHistory,
-        setTargetHistory,
-        saveSetting
+        changeTargetHistory
       }}
     >
       {children}

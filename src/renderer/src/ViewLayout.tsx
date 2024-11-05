@@ -13,11 +13,11 @@ type Prop = {
 };
 
 const ViewLayout: React.FC<Prop> = ({ osisRef, viewOptions, hidden = false }) => {
-  const { swords, layouts } = useContext(AppContext);
+  const { swords, viewLayouts } = useContext(AppContext);
 
   return (
     <Flex h="100%" gap={1} hidden={hidden}>
-      {layouts.map((rowLayouts, i) => {
+      {viewLayouts.map((rowLayouts, i) => {
         return (
           <Box key={i} minWidth={0} flexGrow={1} flexBasis={0}>
             <Flex direction="column" h="100%" gap={1}>

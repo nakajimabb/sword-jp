@@ -25,7 +25,7 @@ type Props = {
 
 const SwordView: React.FC<Props> = ({ sword, osisRef, viewOptions, col, row }) => {
   const [rawTexts, setRawTexts] = useState<Map<string, string>>(new Map());
-  const { swords, setLayouts } = useContext(AppContext);
+  const { swords, viewLayouts, changeViewLayouts } = useContext(AppContext);
 
   useEffect(() => {
     (async () => {
@@ -43,54 +43,47 @@ const SwordView: React.FC<Props> = ({ sword, osisRef, viewOptions, col, row }) =
   }, [sword, osisRef]);
 
   function addView(dir: 'up' | 'down' | 'left' | 'right') {
-    setLayouts((prev) => {
-      const after = [...prev];
-      if (dir === 'up' || dir === 'down') {
-        const index = dir === 'up' ? row : row + 1;
-        after[col].splice(index, 0, {
+    const layouts = [...viewLayouts];
+    if (dir === 'up' || dir === 'down') {
+      const index = dir === 'up' ? row : row + 1;
+      layouts[col].splice(index, 0, {
+        viewType: 'bible',
+        modname: '',
+        textSize: 100,
+        doubled: false,
+        minimized: false,
+        disabled: false
+      });
+    } else if (dir === 'left' || dir === 'right') {
+      const index = dir === 'left' ? col : col + 1;
+      layouts.splice(index, 0, [
+        {
           viewType: 'bible',
           modname: '',
           textSize: 100,
           doubled: false,
           minimized: false,
           disabled: false
-        });
-      } else if (dir === 'left' || dir === 'right') {
-        const index = dir === 'left' ? col : col + 1;
-        after.splice(index, 0, [
-          {
-            viewType: 'bible',
-            modname: '',
-            textSize: 100,
-            doubled: false,
-            minimized: false,
-            disabled: false
-          }
-        ]);
-      }
-      console.log({ after });
-      return after;
-    });
+        }
+      ]);
+    }
+    changeViewLayouts(layouts);
   }
 
   function removeView() {
-    setLayouts((prev) => {
-      const after = [...prev];
-      after[col].splice(row, 1);
-      // 空列になると列を削除
-      if (after[col].length === 0) {
-        after.splice(col, 1);
-      }
-      return after;
-    });
+    const layouts = [...viewLayouts];
+    layouts[col].splice(row, 1);
+    // 空列になると列を削除
+    if (layouts[col].length === 0) {
+      layouts.splice(col, 1);
+    }
+    changeViewLayouts(layouts);
   }
 
   function changeModule(modname: string) {
-    setLayouts((prev) => {
-      const after = [...prev];
-      after[col][row].modname = modname;
-      return after;
-    });
+    const layouts = [...viewLayouts];
+    layouts[col][row].modname = modname;
+    changeViewLayouts(layouts);
   }
 
   function bibleNames() {

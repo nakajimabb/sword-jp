@@ -90,8 +90,7 @@ async function loadSwordModules() {
 
   mainWindow.webContents.send('load-app', {
     modules: bibles.concat(dicts).concat(morphs),
-    settings,
-    resourcePath
+    settings
   });
 }
 

@@ -26,8 +26,7 @@ import { WordReference } from 'src/utils/Sword';
 function AppBar(): JSX.Element {
   const [searchOptions, setSearchOptions] = useState<{ label: string; value: string }[][]>([]);
 
-  const { searchResults, setSearchResults, workSpaceTab, setWorkSpaceTab, saveSetting } =
-    useContext(AppContext);
+  const { searchResults, setSearchResults, workSpaceTab, setWorkSpaceTab } = useContext(AppContext);
   const canonjp: { [key: string]: { abbrev: string; name: string } } = canon_jp;
 
   useEffect(() => {
@@ -225,11 +224,6 @@ function AppBar(): JSX.Element {
           icon={<GiHamburgerMenu />}
           onClick={() => {}}
         />
-        <MenuList fontSize="xs">
-          <MenuItem h={6} onClick={saveSetting}>
-            save Setting
-          </MenuItem>
-        </MenuList>
       </Menu>
     </Flex>
   );
