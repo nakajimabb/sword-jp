@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, createContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, createContext } from 'react';
 import Sword, { WordReference } from '../../utils/Sword';
 
 export const SEARCH_ITEM_SIZE = 20;

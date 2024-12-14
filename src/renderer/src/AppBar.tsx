@@ -7,8 +7,6 @@ import {
   InputRightAddon,
   Menu,
   MenuButton,
-  MenuList,
-  MenuItem,
   Select,
   Stack,
   Tabs,
