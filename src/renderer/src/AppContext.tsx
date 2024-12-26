@@ -186,8 +186,25 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
     );
     // メインプロセスに準備完了のシグナルを送信
     window.electron.ipcRenderer.send('renderer-ready');
+
+    function handleAuxClick(event: MouseEvent) {
+      // middle click
+      if (event.button === 1) {
+        window.electron.ipcRenderer.send('inspect-element', {
+          x: event.clientX,
+          y: event.clientY
+        });
+      }
+    }
+    if (isdev()) {
+      document.addEventListener('auxclick', handleAuxClick);
+    }
+
     return () => {
       window.electron.ipcRenderer.removeAllListeners('load-app');
+      if (isdev()) {
+        document.removeEventListener('auxclick', handleAuxClick);
+      }
     };
   }, []);
 
@@ -227,6 +244,10 @@ export const AppContextProvider: React.FC<Props> = ({ children }) => {
       window.electron.ipcRenderer.removeAllListeners('load-sword-module');
     };
   }, []);
+
+  function isdev() {
+    return process.env.NODE_ENV === 'development';
+  }
 
   function slicedHistory(history: { osisRefs: string[]; index: number }) {
     const MaxHistory = 10;
