@@ -336,8 +336,20 @@ app.whenReady().then(() => {
       }
     });
   });
+  // 要素を検証
   ipcMain.on('inspect-element', (_, { x, y }) => {
     mainWindow.webContents.inspectElement(x, y);
+  });
+  // テキスト検索
+  ipcMain.on('find-in-page', (_, text, options = {}) => {
+    if (mainWindow) {
+      mainWindow.webContents.findInPage(text, options);
+    }
+  });
+  ipcMain.on('stop-find-in-page', () => {
+    if (mainWindow) {
+      mainWindow.webContents.stopFindInPage('clearSelection');
+    }
   });
 
   app.on('activate', function () {

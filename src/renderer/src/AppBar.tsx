@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import {
   Box,
   Flex,
@@ -19,13 +19,23 @@ import BibleOpener from './BibleOpener';
 import AppContext, { SEARCH_ITEM_SIZE } from './AppContext';
 import canon_jp from '../../utils/canons/locale/ja.json';
 import './assets/passage.css';
+import SearchBar from './SearchBar';
 import { WordReference } from 'src/utils/Sword';
 
 function AppBar(): JSX.Element {
   const [searchOptions, setSearchOptions] = useState<{ label: string; value: string }[][]>([]);
+  const [enableSearch, setEnableSearch] = useState(false);
 
   const { searchResults, setSearchResults, workSpaceTab, setWorkSpaceTab } = useContext(AppContext);
   const canonjp: { [key: string]: { abbrev: string; name: string } } = canon_jp;
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   useEffect(() => {
     const options: { label: string; value: string }[][] = [];
@@ -83,6 +93,17 @@ function AppBar(): JSX.Element {
   //   }, {});
   // }
 
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      e.preventDefault();
+      setEnableSearch(true);
+      if (inputRef.current) inputRef.current.focus();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setEnableSearch(false);
+    }
+  };
+
   function bookPositions(wordRefs: Map<string, WordReference>, book: string) {
     const chapterRefs: Map<number, number[]> = new Map();
     wordRefs.forEach((wordRef) => {
@@ -109,8 +130,8 @@ function AppBar(): JSX.Element {
   const seqs = Array.from({ length: searchResults.length }, (_, i) => i + 1);
 
   return (
-    <Flex px={2}>
-      <Flex justifyContent="space-between" p={2}>
+    <Flex justifyContent="space-between" px={2}>
+      <Flex p={2}>
         {workSpaceTab === 0 && <BibleOpener />}
         {workSpaceTab !== 0 && (
           <Box width="280px">
@@ -212,17 +233,20 @@ function AppBar(): JSX.Element {
           )}
         </Tabs>
       </Flex>
-      <Menu>
-        <MenuButton
-          isRound
-          my={2}
-          ml="auto"
-          as={IconButton}
-          size="sm"
-          icon={<GiHamburgerMenu />}
-          onClick={() => {}}
-        />
-      </Menu>
+      <Flex>
+        {enableSearch && <SearchBar ref={inputRef} onClose={() => setEnableSearch(false)} />}
+        <Menu>
+          <MenuButton
+            isRound
+            my={2}
+            ml="auto"
+            as={IconButton}
+            size="sm"
+            icon={<GiHamburgerMenu />}
+            onClick={() => {}}
+          />
+        </Menu>
+      </Flex>
     </Flex>
   );
 }
