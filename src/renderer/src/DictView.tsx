@@ -16,6 +16,7 @@ import { BsSearch } from 'react-icons/bs';
 import DictPassage from './DictPassage';
 import { useAppContext } from './AppContext';
 import Canon from '../../utils/Canon';
+import { hebrewOrGreek } from './tools';
 import { WordReference } from '../../utils/Sword';
 
 const DictOpener: React.FC = () => {
@@ -186,7 +187,7 @@ const DictView: React.FC = () => {
             if (item) {
               return (
                 <Flex>
-                  <Box fontSize="large" fontWeight="semibold">
+                  <Box fontSize="large" fontWeight="semibold" className={hebrewOrGreek(item.spell)}>
                     {item.spell}
                   </Box>
                   {/* <Box pt={1} pl={2}>
