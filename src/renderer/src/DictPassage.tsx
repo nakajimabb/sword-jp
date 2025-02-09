@@ -23,6 +23,7 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
   const attrs = nodeObj.attrs;
 
   if (excepts.includes(nodeObj.tag)) return null;
+  if (nodeObj.tag === 'lb') return <br />;
 
   const textValue = (node_obj: NodeObj) => {
     let text = node_obj.value;
@@ -50,10 +51,7 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
       {nodeObj.value}
       {nodeObj.children.map((childObj, index) =>
         childObj.tag !== '#text' ? (
-          <>
-            <Phrase key={index} nodeObj={childObj} />
-            &nbsp;
-          </>
+          <Phrase key={index} nodeObj={childObj} />
         ) : (
           <React.Fragment key={index}>{childObj.value}</React.Fragment>
         )
