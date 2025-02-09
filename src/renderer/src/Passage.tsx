@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useContext } from 'react';
 import clsx from 'clsx';
+import { Tooltip } from '@chakra-ui/react';
 import { NodeObj, createNodeObj, shapeLemma } from './NodeObj';
+import DictPassage from './DictPassage';
 import AppContext from './AppContext';
 import { str } from './tools';
 import './assets/passage.css';
@@ -23,7 +25,8 @@ type PhraseProps = {
 };
 
 const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
-  const { targetWord, setTargetWord } = useContext(AppContext);
+  const [highlight, setHighlight] = useState(false);
+  const { targetWord, setTargetWord, swords } = useContext(AppContext);
   const excepts = ['note'];
   const attrs = nodeObj.attrs;
 
@@ -35,15 +38,8 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
     return text;
   };
 
-  const clearHighlight = (class_name: string) => {
-    const elems = document.getElementsByClassName(class_name);
-    for (const elem of Array.from(elems)) {
-      elem.classList.remove(class_name);
-    }
-  };
-
-  const onClick = (e: React.MouseEvent) => {
-    onMouseOver(e);
+  const onClick = () => {
+    onMouseOver();
     if (targetWord.lemma) {
       setTargetWord((prev) => ({ ...prev, fixed: !targetWord.fixed }));
     }
@@ -59,10 +55,27 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
     }
   };
 
-  const onMouseOver = async (e: React.MouseEvent) => {
+  function getMorphologies() {
+    return Array.from(swords.values()).filter((sword) => sword.modtype === 'morphology');
+  }
+
+  function morphNode(morph: string) {
+    const morphMods = getMorphologies();
+    const morphTxts = morphMods
+      .map((morphMod) => {
+        if (morph) return Array.from(morphMod.renderDictText(morph).values()) ?? [];
+        else return [];
+      })
+      .flat()
+      .filter((str) => !!str);
+
+    return morphTxts.length > 0 ? <DictPassage rawText={morphTxts.join('')} /> : undefined;
+  }
+
+  const onMouseOver = async () => {
     // const excepts = ['type', 'subType', 'gloss'];
     if (!targetWord.fixed && (attrs.hasOwnProperty('lemma') || attrs.hasOwnProperty('morph'))) {
-      e.currentTarget.classList.add('highlight2');
+      setHighlight(true);
       let lemma: string = str(attrs.lemma).split(':').pop() || '';
       if (lemma) lemma = shapeLemma(lemma);
 
@@ -71,15 +84,20 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
 
       setTargetWord((prev) => ({
         ...prev,
-        morph,
         lemma,
+        morph,
         text: textValue(nodeObj)
       }));
     }
   };
 
   const onMouseLeave = () => {
-    clearHighlight('highlight2');
+    setHighlight(false);
+    setTargetWord((prev) => ({
+      ...prev,
+      morph: undefined,
+      text: undefined
+    }));
   };
 
   // const renderData = () => {
@@ -101,7 +119,7 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
   // };
 
   const curLemma = currentLemma();
-  const lemmas: string[] = [];
+  const lemmas = (targetWord?.lemma ?? '').split(/[,&]/).map((lem) => shapeLemma(lem));
   const color = lemmas.findIndex((lemma) => lemma && lemma === curLemma);
 
   const contents = () => (
@@ -121,14 +139,23 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
   return nodeObj.tag === 'root' ? (
     contents()
   ) : (
-    <div
-      className={clsx('phrase', colors[color], nodeObj.tag)}
-      onClick={onClick}
-      onMouseOver={onMouseOver}
-      onMouseLeave={onMouseLeave}
+    <Tooltip
+      isOpen={highlight}
+      hasArrow
+      fontSize="small"
+      bg="gray.200"
+      color="brown"
+      label={highlight && targetWord.morph ? morphNode(targetWord.morph) : undefined}
     >
-      {contents()}
-    </div>
+      <div
+        className={clsx('phrase', colors[color], nodeObj.tag, highlight && 'highlight2')}
+        onClick={onClick}
+        onMouseOver={onMouseOver}
+        onMouseLeave={onMouseLeave}
+      >
+        {contents()}
+      </div>
+    </Tooltip>
   );
 };
 

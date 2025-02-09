@@ -3,7 +3,6 @@ import {
   Badge,
   Box,
   Flex,
-  Text,
   IconButton,
   Input,
   InputGroup,
@@ -15,7 +14,6 @@ import { ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons';
 import { PiPushPinSimpleFill, PiPushPinSimpleSlashFill } from 'react-icons/pi';
 import { BsSearch } from 'react-icons/bs';
 import DictPassage from './DictPassage';
-import { hebrewOrGreek } from './tools';
 import { useAppContext } from './AppContext';
 import Canon from '../../utils/Canon';
 import { WordReference } from '../../utils/Sword';
@@ -145,22 +143,11 @@ const DictOpener: React.FC = () => {
 
 const DictView: React.FC = () => {
   const [rawTexts, setRawTexts] = useState<Map<string, string[]>>(new Map());
-  const [morphTexts, setMorphTexts] = useState<string[]>([]);
   const { targetWord, swords } = useAppContext();
 
   useEffect(() => {
     (async () => {
       try {
-        const morphs = getMorphologies();
-        const morphTxts = morphs
-          .map((morph) => {
-            if (targetWord.morph)
-              return Array.from(morph.renderText(targetWord.morph).values()) ?? [];
-            else return [];
-          })
-          .flat()
-          .filter((str) => !!str);
-        setMorphTexts(morphTxts);
         const texts: Map<string, string[]> = new Map();
         const dicts = getDictionaries();
         dicts.forEach((dict) => {
@@ -176,10 +163,6 @@ const DictView: React.FC = () => {
     })();
   }, [targetWord, swords]);
 
-  function getMorphologies() {
-    return Array.from(swords.values()).filter((sword) => sword.modtype === 'morphology');
-  }
-
   function getDictionaries() {
     return Array.from(swords.values()).filter((sword) => sword.modtype === 'dictionary');
   }
@@ -191,6 +174,33 @@ const DictView: React.FC = () => {
   function swordDesc(modname: string) {
     const sword = getSword(modname);
     return String(sword?.confs?.title ?? sword?.confs?.Description ?? modname);
+  }
+
+  function wordInfo(lemma: string) {
+    if (lemma) {
+      return getDictionaries()
+        .map((dict) => {
+          const wordMap = dict.dict;
+          if (wordMap) {
+            const item = wordMap.get(lemma);
+            if (item) {
+              return (
+                <Flex>
+                  <Box fontSize="large" fontWeight="semibold">
+                    {item.spell}
+                  </Box>
+                  {/* <Box pt={1} pl={2}>
+                    [{item.pronunciation}]
+                  </Box> */}
+                </Flex>
+              );
+            }
+          }
+          return undefined;
+        })
+        .filter((text) => !!text)[0];
+    }
+    return undefined;
   }
 
   return (
@@ -209,27 +219,11 @@ const DictView: React.FC = () => {
         </Box>
         <Box p={2}>
           <DictOpener />
-          <Box fontSize="larger">
-            {targetWord.text && (
-              <span className={hebrewOrGreek(targetWord.text)}>{targetWord.text}</span>
-            )}
-          </Box>
-          <Flex>
-            <Box whiteSpace="pre-line" fontSize="smaller">
-              {morphTexts.map((text) => (
-                <>
-                  <Text as="span" color="gray.500" fontSize="smaller">
-                    {targetWord.morph}
-                  </Text>
-                  &nbsp;
-                  <DictPassage rawText={text} />
-                </>
-              ))}
-            </Box>
-          </Flex>
         </Box>
-        <hr />
-        <Box p={2}>
+        <Box px={2} py={0}>
+          {targetWord.lemma && wordInfo(targetWord.lemma)}
+        </Box>
+        <Box px={2} py={1}>
           {Array.from(rawTexts.entries()).map(([modname, texts]) => {
             return (
               <>
