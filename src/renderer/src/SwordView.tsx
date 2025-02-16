@@ -159,9 +159,15 @@ const SwordView: React.FC<Props> = ({ sword, osisRef, viewOptions, col, row }) =
           </Menu>
         </Flex>
       </Box>
-      <Box flex={rawTexts.size > 0 ? '1' : '0 0 1.25rem'} overflowY="auto">
+      <Box overflowY="auto">
         <Box border="1px" borderColor="gray.100" bg="gray.100">
-          <Box px={2} pt={1} pb={3} className={String(sword?.confs?.Lang ?? '')} overflowY="auto">
+          <Box
+            px={2}
+            pt={rawTexts.size > 0 ? 1 : 0}
+            pb={rawTexts.size > 0 ? 2 : 0}
+            className={String(sword?.confs?.Lang ?? '')}
+            overflowY="auto"
+          >
             {Array.from(rawTexts.entries()).map(([ref, rawText], key) => (
               <>
                 <Passage key={key} osisRef={ref} rawText={rawText} viewOptions={viewOptions} />
