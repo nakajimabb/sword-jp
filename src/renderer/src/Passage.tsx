@@ -143,7 +143,7 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
       isOpen={highlight}
       hasArrow
       fontSize="small"
-      bg="gray.200"
+      bg="blue.50"
       color="brown"
       label={highlight && targetWord.morph ? morphNode(targetWord.morph) : undefined}
     >

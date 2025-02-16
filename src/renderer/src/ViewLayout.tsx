@@ -20,7 +20,7 @@ const ViewLayout: React.FC<Prop> = ({ osisRef, viewOptions, hidden = false }) =>
       {viewLayouts.map((rowLayouts, i) => {
         return (
           <Box key={i} minWidth={0} flexGrow={1} flexBasis={0}>
-            <Flex direction="column" h="100%" gap={1}>
+            <Flex direction="column" h="100%">
               {rowLayouts.map((layout, j) => {
                 if (layout.viewType === 'bible') {
                   const sword = swords.get(layout.modname);

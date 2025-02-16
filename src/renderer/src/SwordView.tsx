@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Box, Flex, Menu, MenuButton, MenuList, MenuItem, Tooltip } from '@chakra-ui/react';
+import { Box, Flex, Menu, MenuButton, MenuList, MenuItem, Text, Tooltip } from '@chakra-ui/react';
 import { SmallCloseIcon } from '@chakra-ui/icons';
 import { GiHamburgerMenu } from 'react-icons/gi';
 import {
@@ -93,91 +93,85 @@ const SwordView: React.FC<Props> = ({ sword, osisRef, viewOptions, col, row }) =
   }
 
   return (
-    <Box flex={rawTexts.size > 0 ? '1' : '0 0 1.25rem'} overflowY="auto">
-      <Box border="1px" borderColor="gray.100" bg="gray.100">
-        <Box
-          px="0.5rem"
-          fontSize="sm"
-          letterSpacing="wide"
-          boxShadow="lg"
-          color="gray.600"
-          bg="yellow.200"
-          h="1.25rem"
-        >
-          <Flex justifyContent="space-between">
-            <Box>
-              <Menu>
-                <MenuButton mr="5px">
-                  <PiCaretDownFill />
-                </MenuButton>
-                <MenuList fontSize="sm" minWidth="120px">
-                  {bibleNames().map((modname) => {
-                    return (
-                      <MenuItem fontSize="sm" onClick={() => changeModule(modname)}>
-                        {modname}
-                      </MenuItem>
-                    );
-                  })}
-                </MenuList>
-              </Menu>
-              <Tooltip
-                isDisabled={!sword}
-                hasArrow
-                fontSize="small"
-                bg="gray.300"
-                color="black"
-                label={String(sword?.confs?.Description ?? sword?.modname)}
-              >
-                {truncate(String(sword?.confs?.Description ?? sword?.modname ?? 'none'), 24)}
-              </Tooltip>
-            </Box>
+    <>
+      <Box
+        px="0.5rem"
+        fontSize="sm"
+        letterSpacing="wide"
+        boxShadow="lg"
+        color="gray.600"
+        bg="yellow.200"
+        h="1.25rem"
+      >
+        <Flex justifyContent="space-between">
+          <Box>
             <Menu>
-              <MenuButton>
-                <GiHamburgerMenu />
+              <MenuButton mr="5px">
+                <PiCaretDownFill />
               </MenuButton>
               <MenuList fontSize="sm" minWidth="120px">
-                <MenuItem fontSize="sm" icon={<PiArrowFatUpFill />} onClick={() => addView('up')}>
-                  add View Upward
-                </MenuItem>
-                <MenuItem
-                  fontSize="sm"
-                  icon={<PiArrowFatDownFill />}
-                  onClick={() => addView('down')}
-                >
-                  add View Downward
-                </MenuItem>
-                <MenuItem
-                  fontSize="sm"
-                  icon={<PiArrowFatLeftFill />}
-                  onClick={() => addView('left')}
-                >
-                  add View Left
-                </MenuItem>
-
-                <MenuItem
-                  fontSize="sm"
-                  icon={<PiArrowFatRightFill />}
-                  onClick={() => addView('right')}
-                >
-                  add View Right
-                </MenuItem>
-                <MenuItem fontSize="sm" icon={<SmallCloseIcon />} onClick={() => removeView()}>
-                  remove this View
-                </MenuItem>
+                {bibleNames().map((modname) => {
+                  return (
+                    <MenuItem fontSize="sm" onClick={() => changeModule(modname)}>
+                      {modname}
+                    </MenuItem>
+                  );
+                })}
               </MenuList>
             </Menu>
-          </Flex>
-        </Box>
-        <Box px={2} pt={1} pb={3} className={String(sword?.confs?.Lang ?? '')}>
-          {Array.from(rawTexts.entries()).map(([ref, rawText], key) => (
-            <>
-              <Passage key={key} osisRef={ref} rawText={rawText} viewOptions={viewOptions} />
-              {viewOptions.lineBreak && <br />}
-            </>
-          ))}
+            <Tooltip
+              isDisabled={!sword}
+              hasArrow
+              fontSize="small"
+              bg="gray.300"
+              color="black"
+              label={String(sword?.confs?.Description ?? sword?.modname)}
+            >
+              {sword?.modname ?? '???'}
+            </Tooltip>
+          </Box>
+          <Menu>
+            <MenuButton>
+              <GiHamburgerMenu />
+            </MenuButton>
+            <MenuList fontSize="sm" minWidth="120px">
+              <MenuItem fontSize="sm" icon={<PiArrowFatUpFill />} onClick={() => addView('up')}>
+                add View Upward
+              </MenuItem>
+              <MenuItem fontSize="sm" icon={<PiArrowFatDownFill />} onClick={() => addView('down')}>
+                add View Downward
+              </MenuItem>
+              <MenuItem fontSize="sm" icon={<PiArrowFatLeftFill />} onClick={() => addView('left')}>
+                add View Left
+              </MenuItem>
+
+              <MenuItem
+                fontSize="sm"
+                icon={<PiArrowFatRightFill />}
+                onClick={() => addView('right')}
+              >
+                add View Right
+              </MenuItem>
+              <MenuItem fontSize="sm" icon={<SmallCloseIcon />} onClick={() => removeView()}>
+                remove this View
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        </Flex>
+      </Box>
+      <Box flex={rawTexts.size > 0 ? '1' : '0 0 1.25rem'} overflowY="auto">
+        <Box border="1px" borderColor="gray.100" bg="gray.100">
+          <Box px={2} pt={1} pb={3} className={String(sword?.confs?.Lang ?? '')} overflowY="auto">
+            {Array.from(rawTexts.entries()).map(([ref, rawText], key) => (
+              <>
+                <Passage key={key} osisRef={ref} rawText={rawText} viewOptions={viewOptions} />
+                {viewOptions.lineBreak && <br />}
+              </>
+            ))}
+          </Box>
         </Box>
       </Box>
-    </Box>
+    </>
   );
 };
 
