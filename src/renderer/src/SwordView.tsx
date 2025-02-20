@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Box, Flex, Menu, MenuButton, MenuList, MenuItem, Text, Tooltip } from '@chakra-ui/react';
+import { Box, Flex, Menu, MenuButton, MenuList, MenuItem, Tooltip } from '@chakra-ui/react';
 import { SmallCloseIcon } from '@chakra-ui/icons';
 import { GiHamburgerMenu } from 'react-icons/gi';
 import {
@@ -11,7 +11,6 @@ import {
 } from 'react-icons/pi';
 import Sword from '../../utils/Sword';
 import Passage from './Passage';
-import { truncate } from './tools';
 import { ViewOptions } from './Passage';
 import AppContext from './AppContext';
 
