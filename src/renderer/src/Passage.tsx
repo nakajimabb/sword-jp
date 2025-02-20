@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import clsx from 'clsx';
-import { Tooltip } from '@chakra-ui/react';
+import { Text, Tooltip } from '@chakra-ui/react';
 import { NodeObj, createNodeObj, shapeLemma } from './NodeObj';
 import DictPassage from './DictPassage';
 import AppContext from './AppContext';
@@ -11,14 +11,7 @@ const INVALID_CHAR = /[^\x09\x0A\x0D\x20-\xFF\x85\xA0-\uD7FF\uE000-\uFDCF\uFDE0-
 
 export type ViewOptions = { viewChapter: boolean; viewVerse: boolean; lineBreak: boolean };
 
-const colors = [
-  'text-red-600',
-  'text-yellow-500',
-  'text-pink-400',
-  'text-red-800',
-  'text-purple-600',
-  'text-green-500'
-];
+const colors = ['red.500', 'blue.500', 'pink.400', 'teal.500', 'purple.500', 'green.500'];
 
 type PhraseProps = {
   nodeObj: NodeObj;
@@ -123,7 +116,7 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
   const color = lemmas.findIndex((lemma) => lemma && lemma === curLemma);
 
   const contents = () => (
-    <span>
+    <>
       {/* {renderData()} */}
       {nodeObj.value}
       {nodeObj.children.map((childObj, index) =>
@@ -133,7 +126,7 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
           <React.Fragment key={index}>{childObj.value}</React.Fragment>
         )
       )}
-    </span>
+    </>
   );
 
   return nodeObj.tag === 'root' ? (
@@ -147,14 +140,16 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
       color="brown"
       label={highlight && targetWord.morph ? morphNode(targetWord.morph) : undefined}
     >
-      <div
-        className={clsx('phrase', colors[color], nodeObj.tag, highlight && 'highlight2')}
+      <Text
         onClick={onClick}
         onMouseOver={onMouseOver}
         onMouseLeave={onMouseLeave}
+        fontWeight={highlight ? 700 : undefined}
+        color={colors[color]}
+        className={clsx('phrase', nodeObj.tag)}
       >
         {contents()}
-      </div>
+      </Text>
     </Tooltip>
   );
 };
