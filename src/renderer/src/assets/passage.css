@@ -5,41 +5,6 @@
   src: url('./fonts/Tinos-Regular.ttf');
 }
 
-@font-face {
-  font-family: 'NotoSansDisplay';
-  font-style: normal;
-  font-weight: normal;
-  src: url('./fonts/NotoSansDisplay-Regular.ttf');
-}
-
-@font-face {
-  font-family: 'NotoSerif';
-  font-style: normal;
-  font-weight: normal;
-  src: url('./fonts/NotoSerif-Regular.ttf');
-}
-
-@font-face {
-  font-family: 'NotoSans';
-  font-style: normal;
-  font-weight: normal;
-  src: url('./fonts/NotoSans-Regular.ttf');
-}
-
-@font-face {
-  font-family: 'DidactGothic';
-  font-style: normal;
-  font-weight: normal;
-  src: url('./fonts/DidactGothic-Regular.ttf');
-}
-
-@font-face {
-  font-family: 'Carlito';
-  font-style: normal;
-  font-weight: normal;
-  src: url('./fonts/Carlito-Regular.ttf');
-}
-
 .container {
   text-align: left;
   margin: 20px;

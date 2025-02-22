@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import clsx from 'clsx';
-import { Text, Tooltip } from '@chakra-ui/react';
+import { Text } from '@chakra-ui/react';
 import { NodeObj, createNodeObj, shapeLemma } from './NodeObj';
-import DictPassage from './DictPassage';
 import AppContext from './AppContext';
 import { str } from './tools';
 import './assets/passage.css';
@@ -19,7 +18,7 @@ type PhraseProps = {
 
 const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
   const [highlight, setHighlight] = useState(false);
-  const { targetWord, setTargetWord, swords } = useContext(AppContext);
+  const { targetWord, setTargetWord } = useContext(AppContext);
   const excepts = ['note'];
   const attrs = nodeObj.attrs;
 
@@ -48,23 +47,6 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
     }
   };
 
-  function getMorphologies() {
-    return Array.from(swords.values()).filter((sword) => sword.modtype === 'morphology');
-  }
-
-  function morphNode(morph: string) {
-    const morphMods = getMorphologies();
-    const morphTxts = morphMods
-      .map((morphMod) => {
-        if (morph) return Array.from(morphMod.renderDictText(morph).values()) ?? [];
-        else return [];
-      })
-      .flat()
-      .filter((str) => !!str);
-
-    return morphTxts.length > 0 ? <DictPassage rawText={morphTxts.join('')} /> : undefined;
-  }
-
   const onMouseOver = async () => {
     // const excepts = ['type', 'subType', 'gloss'];
     if (!targetWord.fixed && (attrs.hasOwnProperty('lemma') || attrs.hasOwnProperty('morph'))) {
@@ -86,11 +68,6 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
 
   const onMouseLeave = () => {
     setHighlight(false);
-    setTargetWord((prev) => ({
-      ...prev,
-      morph: undefined,
-      text: undefined
-    }));
   };
 
   // const renderData = () => {
@@ -132,25 +109,16 @@ const MuiPhrase: React.FC<PhraseProps> = ({ nodeObj }) => {
   return nodeObj.tag === 'root' ? (
     contents()
   ) : (
-    <Tooltip
-      isOpen={highlight}
-      hasArrow
-      fontSize="small"
-      bg="blue.50"
-      color="brown"
-      label={highlight && targetWord.morph ? morphNode(targetWord.morph) : undefined}
+    <Text
+      onClick={onClick}
+      onMouseOver={onMouseOver}
+      onMouseLeave={onMouseLeave}
+      fontWeight={highlight ? 700 : undefined}
+      color={colors[color]}
+      className={clsx('phrase', nodeObj.tag)}
     >
-      <Text
-        onClick={onClick}
-        onMouseOver={onMouseOver}
-        onMouseLeave={onMouseLeave}
-        fontWeight={highlight ? 700 : undefined}
-        color={colors[color]}
-        className={clsx('phrase', nodeObj.tag)}
-      >
-        {contents()}
-      </Text>
-    </Tooltip>
+      {contents()}
+    </Text>
   );
 };
 

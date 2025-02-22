@@ -8,6 +8,7 @@ import {
   InputGroup,
   InputRightAddon,
   Stack,
+  Text,
   Tooltip
 } from '@chakra-ui/react';
 import { ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons';
@@ -96,7 +97,7 @@ const DictOpener: React.FC = () => {
                     const numstr = match[2];
                     const num = Number(numstr);
                     const numstr2 = String(num + 1).padStart(numstr.length, '0');
-                    return { ...prev, lemma: match[1] + numstr2 };
+                    return { ...prev, lemma: match[1] + numstr2, morph: undefined };
                   }
                 }
                 return prev;
@@ -116,7 +117,7 @@ const DictOpener: React.FC = () => {
                     const num = Number(numstr);
                     if (num > 1) {
                       const numstr2 = String(num - 1).padStart(numstr.length, '0');
-                      return { ...prev, lemma: match[1] + numstr2 };
+                      return { ...prev, lemma: match[1] + numstr2, morph: undefined };
                     }
                   }
                 }
@@ -177,7 +178,28 @@ const DictView: React.FC = () => {
     return String(sword?.confs?.title ?? sword?.confs?.Description ?? modname);
   }
 
-  function wordInfo(lemma: string) {
+  function getMorphologies() {
+    return Array.from(swords.values()).filter((sword) => sword.modtype === 'morphology');
+  }
+
+  function morphNode(morph: string) {
+    const morphMods = getMorphologies();
+    const morphTxts = morphMods
+      .map((morphMod) => {
+        if (morph) return Array.from(morphMod.renderDictText(morph).values()) ?? [];
+        else return [];
+      })
+      .flat()
+      .filter((str) => !!str);
+
+    return morphTxts.length > 0 ? (
+      <Box fontSize="xs">
+        <DictPassage rawText={morphTxts.join('')} />
+      </Box>
+    ) : undefined;
+  }
+
+  function wordInfo(lemma: string, word?: string, morph?: string) {
     if (lemma) {
       return getDictionaries()
         .map((dict) => {
@@ -186,14 +208,30 @@ const DictView: React.FC = () => {
             const item = wordMap.get(lemma);
             if (item) {
               return (
-                <Flex>
-                  <Box fontSize="large" fontWeight="semibold" className={hebrewOrGreek(item.spell)}>
-                    {item.spell}
-                  </Box>
-                  {/* <Box pt={1} pl={2}>
-                    [{item.pronunciation}]
-                  </Box> */}
-                </Flex>
+                <>
+                  <Flex>
+                    <Box
+                      fontSize="large"
+                      fontWeight="semibold"
+                      className={hebrewOrGreek(item.spell)}
+                    >
+                      {item.spell}
+                    </Box>
+                  </Flex>
+                  {morph && (
+                    <>
+                      <Badge fontSize="x-small" variant="outline" colorScheme="gray">
+                        Morphology
+                      </Badge>
+                      <Stack>
+                        <Flex gap={2}>
+                          {word && <Text className={hebrewOrGreek(word)}>{word}</Text>}
+                          {morphNode(morph)}
+                        </Flex>
+                      </Stack>
+                    </>
+                  )}
+                </>
               );
             }
           }
@@ -222,7 +260,7 @@ const DictView: React.FC = () => {
           <DictOpener />
         </Box>
         <Box px={2} py={0}>
-          {targetWord.lemma && wordInfo(targetWord.lemma)}
+          {targetWord.lemma && wordInfo(targetWord.lemma, targetWord.text, targetWord.morph)}
         </Box>
         <Box px={2} py={1}>
           {Array.from(rawTexts.entries()).map(([modname, texts]) => {
