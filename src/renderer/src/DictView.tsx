@@ -243,19 +243,19 @@ const DictView: React.FC = () => {
   }
 
   return (
-    <Box flex="1" overflowY="auto">
-      <Box border="1px" borderColor="gray.100">
-        <Box
-          px="0.5rem"
-          fontSize="sm"
-          letterSpacing="wide"
-          boxShadow="lg"
-          color="gray.600"
-          bg="yellow.200"
-          h="1.25rem"
-        >
-          Dictionary
-        </Box>
+    <>
+      <Box
+        px="0.5rem"
+        fontSize="sm"
+        letterSpacing="wide"
+        boxShadow="lg"
+        color="gray.600"
+        bg="yellow.200"
+        h="1.25rem"
+      >
+        Dictionary
+      </Box>
+      <Box overflowY="auto">
         <Box p={2}>
           <DictOpener />
         </Box>
@@ -279,7 +279,7 @@ const DictView: React.FC = () => {
           })}
         </Box>
       </Box>
-    </Box>
+    </>
   );
 };
 

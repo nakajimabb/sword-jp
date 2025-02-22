@@ -10,7 +10,7 @@ const WorkSpace: React.FC = () => {
   function bookPositions(wordRefs: Map<string, WordReference>, book: string) {
     const chapterRefs: Map<number, number[]> = new Map();
     wordRefs.forEach((wordRef) => {
-      Object.entries(wordRef[book]).forEach(([chap, verseCounts]) => {
+      Object.entries(wordRef[book] ?? []).forEach(([chap, verseCounts]) => {
         const chapter = Number(chap);
         const v1 = chapterRefs.get(chapter) ?? [];
         const v2 = Object.keys(verseCounts).map((v) => Number(v));

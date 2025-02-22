@@ -165,7 +165,6 @@ const SwordView: React.FC<Props> = ({ sword, osisRef, viewOptions, col, row }) =
             pt={rawTexts.size > 0 ? 1 : 0}
             pb={rawTexts.size > 0 ? 2 : 0}
             className={String(sword?.confs?.Lang ?? '')}
-            overflowY="auto"
           >
             {Array.from(rawTexts.entries()).map(([ref, rawText], key) => (
               <>
