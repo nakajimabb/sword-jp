@@ -267,7 +267,7 @@ class Sword {
           const verses = Sword.parseVerse(verse);
           return { book, chapter, verses };
         } else {
-          if (chapter < bookInfo.maxVerses.length) {
+          if (chapter - 1 < bookInfo.maxVerses.length) {
             const verseMax = bookInfo.maxVerses[chapter - 1];
             const verses = [...Array(verseMax)].map((_, i) => i + 1);
             return { book, chapter, verses };
