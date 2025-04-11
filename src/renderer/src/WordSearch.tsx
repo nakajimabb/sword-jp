@@ -41,7 +41,7 @@ const WordSearch: React.FC<Props> = ({ isOpen = true, searchWord, onClose }) => 
   function searchDict() {
     const results: ResultType[] = [];
     dictionaries.forEach((dict) => {
-      const result = dict.searchDictionary(search);
+      const result = dict.searchDictionary(search.trim());
       result.forEach((value, lemma) => {
         results.push({ dict: dict.modname, lemma, value });
       });

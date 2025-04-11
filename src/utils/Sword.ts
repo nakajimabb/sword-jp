@@ -41,6 +41,13 @@ export function decodeTextFromUint8Array(u8arr: Uint8Array, encoding = 'CP1252')
   return iconv.decode(Buffer.from(u8arr), encoding);
 }
 
+export function stripDiacritics(text) {
+  return text
+    .normalize('NFD') // 分解して結合文字を分離
+    .replace(/[\u0300-\u036f\u0591-\u05C7]/g, '') // 一般ダイアクリティカル + ヘブライ語ニクダー/トロープ
+    .toLowerCase();
+}
+
 export type WordReference = { [book: string]: { [chapter: number]: { [verse: number]: number } } };
 
 export type BookReference = {
@@ -124,7 +131,11 @@ class Sword {
     const results = new Map<string, { [key: string]: string }>();
     if (this.format === 'json') {
       this.dict?.forEach((value, key) => {
-        if (value.meaning.includes(search) && results.size < MAX_SEARCH) {
+        if (
+          (value.meaning.includes(search) ||
+            stripDiacritics(value.spell).includes(stripDiacritics(search))) &&
+          results.size < MAX_SEARCH
+        ) {
           results.set(key, value);
         }
       });
