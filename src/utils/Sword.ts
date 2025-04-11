@@ -119,6 +119,19 @@ class Sword {
     return ['zText', 'zCom', 'RawCom'].includes(moddrv);
   }
 
+  searchDictionary(search: string) {
+    const MAX_SEARCH = 20;
+    const results = new Map<string, { [key: string]: string }>();
+    if (this.format === 'json') {
+      this.dict?.forEach((value, key) => {
+        if (value.meaning.includes(search) && results.size < MAX_SEARCH) {
+          results.set(key, value);
+        }
+      });
+    }
+    return results;
+  }
+
   renderText(osisRef: string | string[]) {
     if (this.confs && this.indexes) {
       if (this.modtype === 'bible') {

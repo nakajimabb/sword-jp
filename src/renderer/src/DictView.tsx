@@ -14,13 +14,16 @@ import {
 import { ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons';
 import { PiPushPinSimpleFill, PiPushPinSimpleSlashFill } from 'react-icons/pi';
 import { BsSearch } from 'react-icons/bs';
+import { AiOutlineFileSearch } from 'react-icons/ai';
 import DictPassage from './DictPassage';
-import { useAppContext } from './AppContext';
+import { TargetWord, useAppContext } from './AppContext';
 import Canon from '../../utils/Canon';
 import { hebrewOrGreek } from './tools';
 import { WordReference } from '../../utils/Sword';
+import WordSearch from './WordSearch';
 
 const DictOpener: React.FC = () => {
+  const [openWordSearch, setOpenWordSearch] = useState(false);
   const { swords, targetWord, setTargetWord, searchResults, setSearchResults, setWorkSpaceTab } =
     useAppContext();
   const canon = Canon.canons.nrsv;
@@ -33,7 +36,7 @@ const DictOpener: React.FC = () => {
     }, {});
   }
 
-  function searchWord() {
+  function searchWord(targetWord: TargetWord) {
     const maxSearch = 3;
     if (targetWord.lemma && targetWord.lemma.trim()) {
       const bookIndexes = booksToIndexObject();
@@ -70,18 +73,26 @@ const DictOpener: React.FC = () => {
 
   return (
     <>
+      <WordSearch
+        isOpen={openWordSearch}
+        searchWord={searchWord}
+        onClose={() => setOpenWordSearch(false)}
+      />
       <InputGroup cursor="pointer" size="xs" width="200px">
-        <IconButton
-          mr={1}
-          isRound={true}
-          aria-label="Search database"
-          icon={targetWord.fixed ? <PiPushPinSimpleFill /> : <PiPushPinSimpleSlashFill />}
-          onClick={() => {
-            if (targetWord.lemma) {
-              setTargetWord((prev) => ({ ...prev, fixed: !prev.fixed }));
-            }
-          }}
-        />
+        <Tooltip label="ピン留め">
+          <IconButton
+            mr={1}
+            size="xs"
+            isRound={true}
+            aria-label="Search database"
+            icon={targetWord.fixed ? <PiPushPinSimpleFill /> : <PiPushPinSimpleSlashFill />}
+            onClick={() => {
+              if (targetWord.lemma) {
+                setTargetWord((prev) => ({ ...prev, fixed: !prev.fixed }));
+              }
+            }}
+          />
+        </Tooltip>
         <Input
           value={targetWord.lemma}
           onChange={(e) => setTargetWord((prev) => ({ ...prev, lemma: e.target.value }))}
@@ -128,14 +139,24 @@ const DictOpener: React.FC = () => {
             <ChevronDownIcon />
           </InputRightAddon>
         </Stack>
-        <Tooltip label="語彙検索">
+        <Tooltip label="語彙参照">
           <IconButton
             ml={1}
             size="xs"
             isRound={true}
             aria-label="Search database"
             icon={<BsSearch />}
-            onClick={searchWord}
+            onClick={() => searchWord(targetWord)}
+          />
+        </Tooltip>
+        <Tooltip label="辞書検索">
+          <IconButton
+            ml={1}
+            size="xs"
+            isRound={true}
+            aria-label="Search database"
+            icon={<AiOutlineFileSearch />}
+            onClick={() => setOpenWordSearch(true)}
           />
         </Tooltip>
       </InputGroup>
@@ -216,6 +237,10 @@ const DictView: React.FC = () => {
                       className={hebrewOrGreek(item.spell)}
                     >
                       {item.spell}
+                    </Box>
+                    &emsp;
+                    <Box fontSize="small" pt={1}>
+                      {item.pronunciation}
                     </Box>
                   </Flex>
                   {morph && (

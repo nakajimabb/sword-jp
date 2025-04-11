@@ -23,7 +23,8 @@ import {
   TabPanels,
   Tab,
   TabPanel,
-  useDisclosure
+  useDisclosure,
+  Tooltip
 } from '@chakra-ui/react';
 import {
   ChevronLeftIcon,
@@ -47,6 +48,9 @@ const HistoryButton: React.FC<Props> = ({ mode, maxList = 10, delay = 300 }) => 
   const [clicking, setClicking] = useState(false);
   const { setOsisRef, targetHistory, changeTargetHistory } = useContext(AppContext);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const isDisabled =
+    (mode === 'prev' && targetHistory.index <= 0) ||
+    (mode === 'next' && targetHistory.index >= targetHistory.osisRefs.length - 1);
 
   function slicedHistory() {
     const index = targetHistory.index;
@@ -58,39 +62,38 @@ const HistoryButton: React.FC<Props> = ({ mode, maxList = 10, delay = 300 }) => 
 
   return (
     <Menu isOpen={isOpen} onClose={onClose}>
-      <MenuButton
-        as={IconButton}
-        icon={mode === 'prev' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-        isRound
-        size="sm"
-        fontSize="20px"
-        isDisabled={
-          (mode === 'prev' && targetHistory.index <= 0) ||
-          (mode === 'next' && targetHistory.index >= targetHistory.osisRefs.length - 1)
-        }
-        onMouseDown={() => {
-          setClicking(true);
-          setTimeout(() => onOpen(), delay);
-        }}
-        onMouseUp={() => setClicking(false)}
-        onClick={() => {
-          if (mode === 'prev') {
-            if (targetHistory.index > 0) {
-              const index = targetHistory.index - 1;
-              const osisRef = targetHistory.osisRefs[index];
-              setOsisRef(osisRef);
-              changeTargetHistory({ ...targetHistory, index });
+      <Tooltip isDisabled={isDisabled} label={mode === 'prev' ? '戻る' : '進む'}>
+        <MenuButton
+          as={IconButton}
+          icon={mode === 'prev' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+          isRound
+          size="sm"
+          fontSize="20px"
+          isDisabled={isDisabled}
+          onMouseDown={() => {
+            setClicking(true);
+            setTimeout(() => onOpen(), delay);
+          }}
+          onMouseUp={() => setClicking(false)}
+          onClick={() => {
+            if (mode === 'prev') {
+              if (targetHistory.index > 0) {
+                const index = targetHistory.index - 1;
+                const osisRef = targetHistory.osisRefs[index];
+                setOsisRef(osisRef);
+                changeTargetHistory({ ...targetHistory, index });
+              }
+            } else {
+              if (targetHistory.index < targetHistory.osisRefs.length - 1) {
+                const index = targetHistory.index + 1;
+                const osisRef = targetHistory.osisRefs[index];
+                setOsisRef(osisRef);
+                changeTargetHistory({ ...targetHistory, index });
+              }
             }
-          } else {
-            if (targetHistory.index < targetHistory.osisRefs.length - 1) {
-              const index = targetHistory.index + 1;
-              const osisRef = targetHistory.osisRefs[index];
-              setOsisRef(osisRef);
-              changeTargetHistory({ ...targetHistory, index });
-            }
-          }
-        }}
-      />
+          }}
+        />
+      </Tooltip>
       <MenuList hidden={!clicking} fontSize="sm" minWidth="100px">
         {slicedHistory().map((osisRef, i) => (
           <MenuItem
@@ -142,40 +145,44 @@ const BibleOpener: React.FC = () => {
           </InputLeftAddon>
           <Input value={osisRef} onChange={(e) => setOsisRef(e.target.value)} />
           <Stack direction="column" spacing="0" justifyContent="center">
-            <InputRightAddon
-              height="50%"
-              onClick={() => {
-                const match = osisRef.match(/^(.*?)(\d+)$/);
-                if (match) {
-                  const num = Number(match[2]);
-                  const ref = match[1] + String(num + 1);
-                  setOsisRef(ref);
-                  const history = { ...targetHistory };
-                  history.osisRefs[history.index] = ref;
-                  changeTargetHistory(history);
-                }
-              }}
-            >
-              <ChevronUpIcon />
-            </InputRightAddon>
-            <InputRightAddon
-              height="50%"
-              onClick={() => {
-                const match = osisRef.match(/^(.*?)(\d+)$/);
-                if (match) {
-                  const num = Number(match[2]);
-                  if (num > 1) {
-                    const ref = match[1] + String(num - 1);
+            <Tooltip label="次の章">
+              <InputRightAddon
+                height="50%"
+                onClick={() => {
+                  const match = osisRef.match(/^(.*?)(\d+)$/);
+                  if (match) {
+                    const num = Number(match[2]);
+                    const ref = match[1] + String(num + 1);
                     setOsisRef(ref);
                     const history = { ...targetHistory };
                     history.osisRefs[history.index] = ref;
                     changeTargetHistory(history);
                   }
-                }
-              }}
-            >
-              <ChevronDownIcon />
-            </InputRightAddon>
+                }}
+              >
+                <ChevronUpIcon />
+              </InputRightAddon>
+            </Tooltip>
+            <Tooltip label="前の章">
+              <InputRightAddon
+                height="50%"
+                onClick={() => {
+                  const match = osisRef.match(/^(.*?)(\d+)$/);
+                  if (match) {
+                    const num = Number(match[2]);
+                    if (num > 1) {
+                      const ref = match[1] + String(num - 1);
+                      setOsisRef(ref);
+                      const history = { ...targetHistory };
+                      history.osisRefs[history.index] = ref;
+                      changeTargetHistory(history);
+                    }
+                  }
+                }}
+              >
+                <ChevronDownIcon />
+              </InputRightAddon>
+            </Tooltip>
           </Stack>
         </InputGroup>
       </Flex>

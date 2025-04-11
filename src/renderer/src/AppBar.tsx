@@ -127,7 +127,7 @@ function AppBar(): JSX.Element {
     return Math.ceil(vv.reduce((accum, vs) => vs.length + accum, 0) / pageSize);
   }
 
-  const seqs = Array.from({ length: searchResults.length }, (_, i) => i + 1);
+  const searchKeys = searchResults.map((r) => r.searchKey);
 
   return (
     <Flex justifyContent="space-between" px={2}>
@@ -218,15 +218,21 @@ function AppBar(): JSX.Element {
           py={0.5}
           px={4}
         >
-          {seqs.length > 0 && (
+          {searchKeys.length > 0 && (
             <TabList>
               <Tab px={2} py={1} fontSize="small" onClick={() => setWorkSpaceTab(0)}>
                 本文
               </Tab>
-              {seqs.length > 0 &&
-                seqs.map((num) => (
-                  <Tab px={2} py={1} fontSize="small" onClick={() => setWorkSpaceTab(num)}>
-                    {`検索${num}`}
+              {searchKeys.length > 0 &&
+                searchKeys.map((key, i) => (
+                  <Tab px={2} py={0} fontSize="small" onClick={() => setWorkSpaceTab(i + 1)}>
+                    <Box textAlign="center" p={0} m={0} lineHeight="1">
+                      <small>
+                        <b>検索</b>
+                        <br />
+                        {key}
+                      </small>
+                    </Box>
                   </Tab>
                 ))}
             </TabList>
